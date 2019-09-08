@@ -43,7 +43,7 @@ public class Scanner {
 	int currentLine = 0;
 	int ch;
 	
-	void getChar() throws IOException{
+	public void getChar() throws IOException{
 		ch = r.read();
 		if (ch == '\n' || ch == '\r') {
 			currentPos = 0;
@@ -52,11 +52,18 @@ public class Scanner {
 			currentPos++;
 		}
 	}
-	void skipWhiteSpace() throws Exception {
+	public void skipWhiteSpace() throws Exception {
 		while (ch == ' ' || ch == '\t' || ch == '\f') {
 			getChar();
 		}
 	}
+
+	/*
+	 * public static class showException extends LexicalException { public
+	 * showException(String message) {
+	 * 
+	 * } }
+	 */
 	public Token getNext() throws Exception {
 		    //replace this code.  Just for illustration
 		Token t = null;
@@ -68,6 +75,7 @@ public class Scanner {
 			switch(state) {
 			case START: {
 				// skip white space
+				skipWhiteSpace();
 			    pos = currentPos;
 			    line = currentLine;
 			    switch (ch) {
@@ -89,8 +97,8 @@ public class Scanner {
 			                 sb.append((char)ch);
 			                 getChar();
 			            } 
-			            else { 
-			            	  
+			            else {
+			            	throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 			            	}
 			          	}break;
 			    } // switch (ch)
