@@ -65,7 +65,7 @@ class ScannerTest {
 	 */
 	@Test
 	void test1() throws Exception {
-		Reader r = new StringReader("@");
+		Reader r = new StringReader("a");
 		Scanner s = new Scanner(r);
         assertThrows(LexicalException.class, ()->{
 		   s.getNext();

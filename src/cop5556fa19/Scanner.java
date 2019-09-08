@@ -24,7 +24,9 @@ import java.io.Reader;
 public class Scanner {
 	
 	Reader r;
-
+	public enum State {
+		START, HAVE_EQ, IN_NUMLIT, IN_IDENT
+	}
 
 	@SuppressWarnings("serial")
 	public static class LexicalException extends Exception {	
@@ -35,13 +37,73 @@ public class Scanner {
 	
 	public Scanner(Reader r) throws IOException {
 		this.r = r;
+		getChar();
 	}
-
-
+	int currentPos = -1;
+	int currentLine = 0;
+	int ch;
+	
+	void getChar() throws IOException{
+		ch = r.read();
+		if (ch == '\n' || ch == '\r') {
+			currentPos = 0;
+			currentLine++;
+		} else {
+			currentPos++;
+		}
+	}
+	void skipWhiteSpace() throws Exception {
+		while (ch == ' ' || ch == '\t' || ch == '\f') {
+			getChar();
+		}
+	}
 	public Token getNext() throws Exception {
 		    //replace this code.  Just for illustration
-		    if (r.read() == -1) { return new Token(EOF,"eof",0,0);}
-			throw new LexicalException("Useful error message");
+		Token t = null;
+		StringBuilder sb;
+		int pos = -1;
+		int line = -1;
+		State state = State.START;
+		while (t == null) {
+			switch(state) {
+			case START: {
+				// skip white space
+			    pos = currentPos;
+			    line = currentLine;
+			    switch (ch) {
+			    case '+': {t = new Token(OP_PLUS, "+", pos, line);getChar();}break;
+			    case '*': {t = new Token(OP_TIMES, "*", pos, line);getChar();}break;        
+			    case '=': {state = State.HAVE_EQ; getChar();}break;
+			    //case '0': {t = new Token(NUM_LIT,"0",pos,line);getChar();}break;
+			    case  -1: {t = new Token(EOF, "EOF", pos, line); break;}
+			    default: {
+			            if (Character.isDigit(ch)) {
+			            	//state = State.IN_DIGIT; 		
+			                sb = new StringBuilder();
+			                sb.append((char)ch);
+			                getChar();
+			            } 
+			            else if (Character.isJavaIdentifierStart(ch)) {
+			                 state = State.IN_IDENT; 
+			                 sb = new StringBuilder();
+			                 sb.append((char)ch);
+			                 getChar();
+			            } 
+			            else { 
+			            	  
+			            	}
+			          	}break;
+			    } // switch (ch)
+
+			}
+			case HAVE_EQ:
+			case IN_NUMLIT:
+			case IN_IDENT:
+			}
+		}
+		return t;
+		//if (r.read() == -1) { return new Token(EOF,"eof",0,0);}
+			//throw new LexicalException("Useful error message");
 		}
 
 }
