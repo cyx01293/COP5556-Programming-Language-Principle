@@ -25,9 +25,72 @@ public class Scanner {
 	
 	Reader r;
 	public enum State {
-		START, HAVE_EQ, IN_NUMLIT, IN_IDENT, HAVE_DIV, HAVE_XOR, HAVE_MINUS, HAVE_LT, HAVE_GT, HAVE_COLON, HAVE_DOT, HAVE_2DOTS
+		START, HAVE_EQ, IN_NUMLIT, IN_IDENT, HAVE_DIV, HAVE_XOR, HAVE_MINUS, HAVE_LT, HAVE_GT, HAVE_COLON, HAVE_DOT, HAVE_2DOTS, 
+		IN_COMMENT
 	}
-
+	
+	public enum Kind {
+		NAME,
+		INTLIT,
+		KW_and,
+		KW_break,
+		KW_do,
+		KW_else,
+		KW_elseif,
+		KW_end,
+		KW_false,
+		KW_for,
+		KW_function,
+		KW_goto,
+		KW_if,
+		KW_in,
+		KW_local,
+		KW_nil,
+		KW_not,
+		KW_or,
+		KW_repeat,
+		KW_return,
+		KW_then,
+		KW_true,
+		KW_until,
+		KW_while,
+		OP_PLUS, // +
+		OP_MINUS, // -
+		OP_TIMES, // *
+		OP_DIV, // /
+		OP_MOD, // %
+		OP_POW, // ^
+		OP_HASH, // #
+		BIT_AMP, // &
+		BIT_XOR, // ~
+		BIT_OR,  //  |
+		BIT_SHIFTL, // <<
+		BIT_SHIFTR, //  >>
+		OP_DIVDIV, // //
+		REL_EQEQ,  // ==
+		REL_NOTEQ, // ~=
+		REL_LE, // <=
+		REL_GE, // >=
+		REL_LT, // <
+		REL_GT, // >
+		ASSIGN, // =
+		LPAREN, 
+		RPAREN,
+		LCURLY,
+		RCURLY,
+		LSQUARE,
+		RSQUARE,
+		COLONCOLON, // ::
+		SEMI,
+		COLON,
+		COMMA,
+		DOT,   // .
+		DOTDOT,  // ..
+		DOTDOTDOT, // ...
+		STRINGLIT, 
+		EOF;
+	}
+	
 	@SuppressWarnings("serial")
 	public static class LexicalException extends Exception {	
 		public LexicalException(String arg0) {
@@ -42,19 +105,62 @@ public class Scanner {
 	int currentPos = -1;
 	int currentLine = 0;
 	int ch;
-	
+	boolean afterCR = false;
 	public void getChar() throws IOException{
 		ch = r.read();
-		if (ch == '\n' || ch == '\r') {
-			currentPos = 0;
+		if (ch == '\n' && !afterCR) {
+			currentPos = -1;
 			currentLine++;
-			
+		} else if (ch == '\r') {
+			afterCR = true;
+			currentPos = -1;
+			currentLine++;
+		} else if (ch == '\n' && afterCR) {
+			afterCR = false;
 		} else {
+			afterCR = false;
 			currentPos++;
 		}
 	}
+	public boolean isLineTerminator() throws Exception {
+		if (ch == '\n' || ch == '\r') {
+			return true;
+		} else return false;
+	}
+	public boolean isOtherTokens() throws Exception {
+		if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^' || ch == '#' || ch == '&' || ch == '~'
+		|| ch == '|' || ch == '<' || ch == '>' || ch == '=' || ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == '['
+		|| ch == ']' || ch == ';' || ch == ':' || ch == ',' || ch == '.') {
+			return true;
+		} else return false;
+	}
+	public Kind isKeyWords(String s) throws Exception {
+		if (s.equals("and")) return Kind.KW_and;
+		else if (s.equals("break")) return Kind.KW_break;
+		else if (s.equals("do")) return Kind.KW_do;
+		else if (s.equals("else")) return Kind.KW_else;
+		else if (s.equals("elseif")) return Kind.KW_elseif;
+		else if (s.equals("end")) return Kind.KW_end;
+		else if (s.equals("false")) return Kind.KW_false;
+		else if (s.equals("for")) return Kind.KW_for;
+		else if (s.equals("function")) return Kind.KW_function;
+		else if (s.equals("goto")) return Kind.KW_goto;
+		else if (s.equals("if")) return Kind.KW_if;
+		else if (s.equals("in")) return Kind.KW_in;
+		else if (s.equals("local")) return Kind.KW_local;
+		else if (s.equals("nil")) return Kind.KW_nil;
+		else if (s.equals("not")) return Kind.KW_not;
+		else if (s.equals("or")) return Kind.KW_or;
+		else if (s.equals("repeat")) return Kind.KW_repeat;
+		else if (s.equals("return")) return Kind.KW_return;
+		else if (s.equals("then")) return Kind.KW_then;
+		else if (s.equals("true")) return Kind.KW_true;
+		else if (s.equals("until")) return Kind.KW_until;
+		else if (s.equals("while")) return Kind.KW_while;
+		else return null;
+	}
 	public void skipWhiteSpace() throws Exception {
-		while (ch == ' ' || ch == '\t' || ch == '\f') {
+		while (ch == ' ' || ch == '\t' || ch == '\f' || isLineTerminator()) {
 			getChar();
 		}
 	}
@@ -68,7 +174,7 @@ public class Scanner {
 	public Token getNext() throws Exception {
 		    //replace this code.  Just for illustration
 		Token t = null;
-		StringBuilder sb;
+		StringBuilder sb = new StringBuilder();;
 		int pos = -1;
 		int line = -1;
 		State state = State.START;
@@ -112,7 +218,7 @@ public class Scanner {
 			                sb.append((char)ch);
 			                getChar();
 			            } 
-			            else if (Character.isJavaIdentifierStart(ch)) {
+			            else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
 			                 state = State.IN_IDENT; 
 			                 sb = new StringBuilder();
 			                 sb.append((char)ch);
@@ -123,22 +229,59 @@ public class Scanner {
 			          	}break;
 			    } // switch (ch)
 
-			}
+			}break;
+			case IN_NUMLIT:break;
+			case IN_IDENT: {
+			      if (Character.isJavaIdentifierPart(ch)) {
+			            sb.append((char)ch);
+			            Kind temp = isKeyWords(sb.toString());
+			            if (temp != null) {
+			            	t = new Token(temp, sb.toString(), pos, line);
+			            }
+			            getChar();
+			      } else {
+			    	  state = State.START;
+			    	  t = new Token(NAME,sb.toString(), pos, line);
+			      }
+			                 //we are done building the ident.  Create Token
+			                 //if we had keywords, we would check for that here
+				  
+			      }	break;
 			case HAVE_MINUS: {
 				if (ch == '-') {
-					//state = State.comment.S;
+					state = State.IN_COMMENT;
+					getChar();
+				}else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()){
+					state = State.START;
+					t = new Token(OP_MINUS, "-", pos, line);
+					//getChar();
+				} else {
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
 				
+			}break;
+			case IN_COMMENT: {
+				if ((Character.isJavaIdentifierPart(ch) || isOtherTokens()) && !isLineTerminator()) {
+					state = State.IN_COMMENT;
+					pos++;
+					getChar();
+				} else if (isLineTerminator()) {
+					state = State.START;
+					getChar();
+				} else if (ch == -1) {
+					t = new Token(EOF, "EOF", pos, line);
+				} else {
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+				}
 			}break;
 			case HAVE_DIV: {
 				if (ch == '/') {
 					state = State.START;
 					t = new Token(OP_DIVDIV, "//", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(OP_DIV, "/", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -148,10 +291,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_NOTEQ, "~=", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(BIT_XOR, "~", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -165,10 +307,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_LE, "<=", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(REL_LT, "<", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -182,10 +323,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_GE, ">=", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(REL_GT, ">", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -195,10 +335,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_EQEQ, "==", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(ASSIGN, "=", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -208,10 +347,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(COLONCOLON, "::", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(ASSIGN, ":", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -220,10 +358,9 @@ public class Scanner {
 				if (ch == '.') {
 					state = State.HAVE_2DOTS;
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(DOT, ".", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
@@ -233,26 +370,15 @@ public class Scanner {
 					state = State.START;
 					t = new Token(DOTDOTDOT, "...", pos, line);
 					getChar();
-				} else if (Character.isJavaIdentifierPart(ch)) {
+				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
 					state = State.START;
 					t = new Token(DOTDOT, "..", pos, line);
-					getChar();
 				} else {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
 				}
 			}break;
-			case IN_NUMLIT:
-			case IN_IDENT: {
-			     /* if (Character.isJavaIdentifierPart(ch)) {
-			            sb.append((char)ch);
-			            getChar();
-			      } else {*/
-			                 //we are done building the ident.  Create Token
-			                 //if we had keywords, we would check for that here
-				   // t = new Token(Ident,sb.toString(), pos, line));
-			      }
-			break;
-
+			
+			default: {}break;
 			}
 		}
 		return t;
