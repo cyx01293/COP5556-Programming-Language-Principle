@@ -21,74 +21,14 @@ import static cop5556fa19.Token.Kind.*;
 import java.io.IOException;
 import java.io.Reader;
 
+import static cop5556fa19.Token.Kind;
+
 public class Scanner {
 	
 	Reader r;
 	public enum State {
 		START, HAVE_EQ, IN_NUMLIT, IN_IDENT, HAVE_DIV, HAVE_XOR, HAVE_MINUS, HAVE_LT, HAVE_GT, HAVE_COLON, HAVE_DOT, HAVE_2DOTS, 
-		IN_COMMENT
-	}
-	
-	public enum Kind {
-		NAME,
-		INTLIT,
-		KW_and,
-		KW_break,
-		KW_do,
-		KW_else,
-		KW_elseif,
-		KW_end,
-		KW_false,
-		KW_for,
-		KW_function,
-		KW_goto,
-		KW_if,
-		KW_in,
-		KW_local,
-		KW_nil,
-		KW_not,
-		KW_or,
-		KW_repeat,
-		KW_return,
-		KW_then,
-		KW_true,
-		KW_until,
-		KW_while,
-		OP_PLUS, // +
-		OP_MINUS, // -
-		OP_TIMES, // *
-		OP_DIV, // /
-		OP_MOD, // %
-		OP_POW, // ^
-		OP_HASH, // #
-		BIT_AMP, // &
-		BIT_XOR, // ~
-		BIT_OR,  //  |
-		BIT_SHIFTL, // <<
-		BIT_SHIFTR, //  >>
-		OP_DIVDIV, // //
-		REL_EQEQ,  // ==
-		REL_NOTEQ, // ~=
-		REL_LE, // <=
-		REL_GE, // >=
-		REL_LT, // <
-		REL_GT, // >
-		ASSIGN, // =
-		LPAREN, 
-		RPAREN,
-		LCURLY,
-		RCURLY,
-		LSQUARE,
-		RSQUARE,
-		COLONCOLON, // ::
-		SEMI,
-		COLON,
-		COMMA,
-		DOT,   // .
-		DOTDOT,  // ..
-		DOTDOTDOT, // ...
-		STRINGLIT, 
-		EOF;
+		IN_COMMENT, IN_DIGIT, IN_STRING, IN_DQSTRING, IN_SQSTRING
 	}
 	
 	@SuppressWarnings("serial")
@@ -134,29 +74,30 @@ public class Scanner {
 			return true;
 		} else return false;
 	}
-	public Kind isKeyWords(String s) throws Exception {
-		if (s.equals("and")) return Kind.KW_and;
-		else if (s.equals("break")) return Kind.KW_break;
-		else if (s.equals("do")) return Kind.KW_do;
-		else if (s.equals("else")) return Kind.KW_else;
-		else if (s.equals("elseif")) return Kind.KW_elseif;
-		else if (s.equals("end")) return Kind.KW_end;
-		else if (s.equals("false")) return Kind.KW_false;
-		else if (s.equals("for")) return Kind.KW_for;
-		else if (s.equals("function")) return Kind.KW_function;
-		else if (s.equals("goto")) return Kind.KW_goto;
-		else if (s.equals("if")) return Kind.KW_if;
-		else if (s.equals("in")) return Kind.KW_in;
-		else if (s.equals("local")) return Kind.KW_local;
-		else if (s.equals("nil")) return Kind.KW_nil;
-		else if (s.equals("not")) return Kind.KW_not;
-		else if (s.equals("or")) return Kind.KW_or;
-		else if (s.equals("repeat")) return Kind.KW_repeat;
-		else if (s.equals("return")) return Kind.KW_return;
-		else if (s.equals("then")) return Kind.KW_then;
-		else if (s.equals("true")) return Kind.KW_true;
-		else if (s.equals("until")) return Kind.KW_until;
-		else if (s.equals("while")) return Kind.KW_while;
+	public Kind isKeyWords(StringBuilder sb) throws Exception {
+		String s = sb.toString();
+		if (s.equals("and")) return KW_and;
+		else if (s.equals("break")) return KW_break;
+		else if (s.equals("do")) return KW_do;
+		else if (s.equals("else")) return KW_else;
+		else if (s.equals("elseif")) return KW_elseif;
+		else if (s.equals("end")) return KW_end;
+		else if (s.equals("false")) return KW_false;
+		else if (s.equals("for")) return KW_for;
+		else if (s.equals("function")) return KW_function;
+		else if (s.equals("goto")) return KW_goto;
+		else if (s.equals("if")) return KW_if;
+		else if (s.equals("in")) return KW_in;
+		else if (s.equals("local")) return KW_local;
+		else if (s.equals("nil")) return KW_nil;
+		else if (s.equals("not")) return KW_not;
+		else if (s.equals("or")) return KW_or;
+		else if (s.equals("repeat")) return KW_repeat;
+		else if (s.equals("return")) return KW_return;
+		else if (s.equals("then")) return KW_then;
+		else if (s.equals("true")) return KW_true;
+		else if (s.equals("until")) return KW_until;
+		else if (s.equals("while")) return KW_while;
 		else return null;
 	}
 	public void skipWhiteSpace() throws Exception {
@@ -209,11 +150,11 @@ public class Scanner {
 			    case ':': {state = State.HAVE_COLON; getChar();}break;
 			    case ',': {t = new Token(COMMA, ",", pos, line);getChar();}break;
 			    case '.': {state = State.HAVE_DOT; getChar();}break;
-			    //case '0': {t = new Token(NUM_LIT,"0",pos,line);getChar();}break;
+			    case '0': {t = new Token(INTLIT,"0",pos,line);getChar();}break;
 			    case  -1: {t = new Token(EOF, "EOF", pos, line); break;}
 			    default: {
 			            if (Character.isDigit(ch)) {
-			            	//state = State.IN_DIGIT; 		
+			            	state = State.IN_DIGIT; 		
 			                sb = new StringBuilder();
 			                sb.append((char)ch);
 			                getChar();
@@ -223,18 +164,68 @@ public class Scanner {
 			                 sb = new StringBuilder();
 			                 sb.append((char)ch);
 			                 getChar();
+			            } else if (ch == '\"' || ch == '\''){
+			            	sb = new StringBuilder();
+			            	if (ch == '\"') {
+			            		state = State.IN_DQSTRING;
+			            		sb.append((char)ch);
+			            	}else {
+			            		state = State.IN_SQSTRING;
+			            		sb.append((char)ch);
+			            	}
+			            	getChar();
 			            } else {
-			            	throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+			            	throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 			            	}
 			          	}break;
 			    } // switch (ch)
 
 			}break;
-			case IN_NUMLIT:break;
+			case IN_DQSTRING:{
+				if (ch == '\"') {
+					state = State.START;
+					sb.append((char)ch);
+					t = new Token(STRINGLIT, sb.toString(), pos, line);
+					getChar();
+				} else if (ch >= 0 && ch <= 127) {
+					sb.append((char)ch);
+					getChar();
+				} else if (ch == -1){
+					throw new LexicalException("String is not completed");
+				} else {
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
+				}
+			}break;
+			case IN_SQSTRING:{
+				if (ch == '\'') {
+					state = State.START;
+					sb.append((char)ch);
+					t = new Token(STRINGLIT, sb.toString(), pos, line);
+					getChar();
+				} else if (ch == '\"') {
+					throw new LexicalException("Double quote mark at position "+(pos + 1)+", line "+(line + 1)+" cannot be inside a pair of single quote marks");
+				} else if (ch >= 0 && ch <= 127) {
+					sb.append((char)ch);
+					getChar();
+				} else if (ch == -1) {
+					throw new LexicalException("String is not completed");
+				} else {
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
+				}
+			}break;
+			case IN_DIGIT:{
+				if (Character.isDigit(ch)) {
+					sb.append((char)ch);
+					getChar();
+				} else {
+					state = State.START;
+					t = new Token(INTLIT, sb.toString(), pos, line);
+				}
+			}break;
 			case IN_IDENT: {
 			      if (Character.isJavaIdentifierPart(ch)) {
 			            sb.append((char)ch);
-			            Kind temp = isKeyWords(sb.toString());
+			            Kind temp = isKeyWords(sb);
 			            if (temp != null) {
 			            	t = new Token(temp, sb.toString(), pos, line);
 			            }
@@ -256,12 +247,12 @@ public class Scanner {
 					t = new Token(OP_MINUS, "-", pos, line);
 					//getChar();
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 				
 			}break;
 			case IN_COMMENT: {
-				if ((Character.isJavaIdentifierPart(ch) || isOtherTokens()) && !isLineTerminator()) {
+				if ((ch >= 0 && ch <= 127) && !isLineTerminator()) {
 					state = State.IN_COMMENT;
 					pos++;
 					getChar();
@@ -271,7 +262,7 @@ public class Scanner {
 				} else if (ch == -1) {
 					t = new Token(EOF, "EOF", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_DIV: {
@@ -283,7 +274,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(OP_DIV, "/", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_XOR: {
@@ -295,7 +286,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(BIT_XOR, "~", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_LT: {
@@ -311,7 +302,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_LT, "<", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_GT: {
@@ -327,7 +318,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_GT, ">", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_EQ: {
@@ -339,7 +330,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(ASSIGN, "=", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_COLON: {
@@ -351,7 +342,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(ASSIGN, ":", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_DOT: {
@@ -362,7 +353,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(DOT, ".", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_2DOTS: {
@@ -374,7 +365,7 @@ public class Scanner {
 					state = State.START;
 					t = new Token(DOTDOT, "..", pos, line);
 				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + " spotted");
+					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			

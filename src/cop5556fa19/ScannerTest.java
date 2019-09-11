@@ -116,20 +116,36 @@ class ScannerTest {
 	
 	@Test
 	void test4() throws Exception {
-		Reader r = new StringReader("a_0");
+		Reader r = new StringReader("");
 		Scanner s = new Scanner(r);
 		Token t;
-		show(t= s.getNext()); 
-		assertEquals(t.kind,NAME);
-		assertEquals(t.text,"a_0");
-		show(t= s.getNext()); 
+		/*
+		 * show(assertThrows(LexicalException.class, ()->{ s.getNext(); }));
+		 */
+		show(t= s.getNext());  
 		assertEquals(t.kind,EOF);
 		assertEquals(t.text,"EOF");
-
-		
 		/*
 		 * show(t= s.getNext()); assertEquals(t.kind,OP_DIV); assertEquals(t.text,"/");
 		 */
+		
+	
+	}
+	@Test
+	void test5() throws Exception {
+		String file = "testInputFiles\\test5.input"; 
+		Reader r = new BufferedReader(new FileReader(file));
+		Scanner s = new Scanner(r);
+		Token t;
+		show(t= s.getNext());  
+		assertEquals(t.kind,DOTDOT);
+		assertEquals(t.text,"..");
+		show(t= s.getNext());  
+		assertEquals(t.kind,KW_and);
+		assertEquals(t.text,"and");
+		show(t= s.getNext());  
+		assertEquals(t.kind,NAME);
+		assertEquals(t.text,"d");
 	}
 
 }
