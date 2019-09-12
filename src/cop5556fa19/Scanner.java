@@ -218,6 +218,11 @@ public class Scanner {
 					sb.append((char)ch);
 					getChar();
 				} else {
+					try {
+						Integer.parseInt(sb.toString());
+					} catch (NumberFormatException e) {
+						throw new LexicalException("Number overflow at position "+(pos + 1) + ", line "+(line + 1));
+					}
 					state = State.START;
 					t = new Token(INTLIT, sb.toString(), pos, line);
 				}
