@@ -241,13 +241,12 @@ public class Scanner {
 			case HAVE_MINUS: {
 				if (ch == '-') {
 					state = State.IN_COMMENT;
+					pos++;
 					getChar();
-				}else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()){
+				}else {
 					state = State.START;
 					t = new Token(OP_MINUS, "-", pos, line);
 					//getChar();
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 				
 			}break;
@@ -270,23 +269,19 @@ public class Scanner {
 					state = State.START;
 					t = new Token(OP_DIVDIV, "//", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(OP_DIV, "/", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
-				}
+				} 
 			}break;
 			case HAVE_XOR: {
 				if (ch == '=') {
 					state = State.START;
 					t = new Token(REL_NOTEQ, "~=", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(BIT_XOR, "~", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_LT: {
@@ -298,11 +293,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_LE, "<=", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(REL_LT, "<", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_GT: {
@@ -314,11 +307,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_GE, ">=", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(REL_GT, ">", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_EQ: {
@@ -326,11 +317,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(REL_EQEQ, "==", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(ASSIGN, "=", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_COLON: {
@@ -338,22 +327,18 @@ public class Scanner {
 					state = State.START;
 					t = new Token(COLONCOLON, "::", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(ASSIGN, ":", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_DOT: {
 				if (ch == '.') {
 					state = State.HAVE_2DOTS;
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(DOT, ".", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			case HAVE_2DOTS: {
@@ -361,11 +346,9 @@ public class Scanner {
 					state = State.START;
 					t = new Token(DOTDOTDOT, "...", pos, line);
 					getChar();
-				} else if (ch == -1 || Character.isJavaIdentifierPart(ch) || isOtherTokens()) {
+				} else {
 					state = State.START;
 					t = new Token(DOTDOT, "..", pos, line);
-				} else {
-					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;
 			

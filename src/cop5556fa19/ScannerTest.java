@@ -116,15 +116,22 @@ class ScannerTest {
 	
 	@Test
 	void test4() throws Exception {
-		Reader r = new StringReader("");
+		Reader r = new StringReader("''");
 		Scanner s = new Scanner(r);
 		Token t;
 		/*
 		 * show(assertThrows(LexicalException.class, ()->{ s.getNext(); }));
 		 */
 		show(t= s.getNext());  
-		assertEquals(t.kind,EOF);
-		assertEquals(t.text,"EOF");
+		assertEquals(t.kind,OP_MINUS);
+		assertEquals(t.text,"-");
+		show(t= s.getNext());  
+		assertEquals(t.kind,OP_PLUS);
+		assertEquals(t.text,"+");
+		show(t= s.getNext());  
+		assertEquals(t.kind,OP_MINUS);
+		assertEquals(t.text,"-");
+		show(assertThrows(LexicalException.class, ()->{ s.getNext(); }));
 		/*
 		 * show(t= s.getNext()); assertEquals(t.kind,OP_DIV); assertEquals(t.text,"/");
 		 */
