@@ -116,14 +116,28 @@ class ScannerTest {
 	
 	@Test
 	void test4() throws Exception {
-		Reader r = new StringReader("999");
+		Reader r = new StringReader("~~ ~~= ~== ::: ::::");
 		Scanner s = new Scanner(r);
 		Token t;
 		
 		  //show(assertThrows(LexicalException.class, ()->{ s.getNext(); }));
 		 
 		
-		  show(t= s.getNext()); assertEquals(t.kind,INTLIT); assertEquals(t.text,"999");
+		  show(t= s.getNext()); 
+		  assertEquals(t.kind,BIT_XOR); 
+		  assertEquals(t.text,"~");
+		  show(t= s.getNext()); 
+		  assertEquals(t.kind,BIT_XOR); 
+		  assertEquals(t.text,"~");
+		  show(t= s.getNext()); 
+		  assertEquals(t.kind,BIT_XOR); 
+		  assertEquals(t.text,"~");
+		  show(t= s.getNext()); 
+		  assertEquals(t.kind,REL_NOTEQ); 
+		  assertEquals(t.text,"~=");
+		  show(t= s.getNext()); 
+		  assertEquals(t.kind,REL_NOTEQ); 
+		  assertEquals(t.text,"~=");
 		 // show(t= s.getNext()); assertEquals(t.kind,INTLIT); assertEquals(t.text,"70");
 		 
 		/*
@@ -139,8 +153,7 @@ class ScannerTest {
 	}
 	@Test
 	void test5() throws Exception {
-		String file = "testInputFiles\\test5.input"; 
-		Reader r = new BufferedReader(new FileReader(file));
+		Reader r = new StringReader("testInputFiles\\\\test5.input");
 		Scanner s = new Scanner(r);
 		Token t;
 		show(t= s.getNext());  
@@ -152,6 +165,32 @@ class ScannerTest {
 		show(t= s.getNext());  
 		assertEquals(t.kind,NAME);
 		assertEquals(t.text,"d");
+	}
+	@Test
+	void test6() throws Exception {
+		Reader r = new StringReader("--cc\n");
+		Scanner s = new Scanner(r);
+		Token t;
+		show(t= s.getNext());  
+		assertEquals(t.kind,SEMI);
+		assertEquals(t.text,";");
+		show(t= s.getNext());  
+		assertEquals(t.kind,COLON);
+		assertEquals(t.text,":");
+		show(t= s.getNext());  
+		assertEquals(t.kind,COMMA);
+		assertEquals(t.text,",");
+	}
+	@Test
+	void test7() throws Exception {
+		Reader r = new StringReader("\"adaf\"");
+		Scanner s = new Scanner(r);
+		Token t;
+		
+		show(t= s.getNext());  
+		assertEquals(t.kind,KW_elseif);
+		assertEquals(t.text,"elseif");
+
 	}
 
 }

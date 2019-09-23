@@ -46,6 +46,8 @@ public class Scanner {
 	int currentLine = 0;
 	int ch;
 	boolean afterCR = false;
+	boolean inAfterCR = false;
+	Kind temp;
 	public void getChar() throws IOException{
 		ch = r.read();
 		if (ch == '\n' && !afterCR) {
@@ -80,7 +82,10 @@ public class Scanner {
 		else if (s.equals("break")) return KW_break;
 		else if (s.equals("do")) return KW_do;
 		else if (s.equals("else")) return KW_else;
-		else if (s.equals("elseif")) return KW_elseif;
+		else if (s.equals("elseif")) {
+			
+			return KW_elseif;
+		}
 		else if (s.equals("end")) return KW_end;
 		else if (s.equals("false")) return KW_false;
 		else if (s.equals("for")) return KW_for;
@@ -104,6 +109,11 @@ public class Scanner {
 		while (ch == ' ' || ch == '\t' || ch == '\f' || isLineTerminator()) {
 			getChar();
 		}
+	}
+	public boolean isEscapeSequence() throws Exception {
+		if (ch == 'a'|| ch == 'b' || ch == 'f' || ch == 'n' || ch == 'r' || ch == 't' || ch == 'V') {
+			return true;
+		} else return false;
 	}
 
 	/*
@@ -187,7 +197,22 @@ public class Scanner {
 					sb.append((char)ch);
 					t = new Token(STRINGLIT, sb.toString(), pos, line);
 					getChar();
-				} else if (ch >= 0 && ch <= 127) {
+				} else if (ch == '\\') {
+					getChar();
+					if (ch == 'a') sb.append('\u0007');
+					else if (ch == 'b') sb.append('\b');
+					else if (ch == 'f') sb.append('\f');
+					else if (ch == 't') sb.append('\t');
+					else if (ch == 'n' && !inAfterCR) sb.append('\n');
+					else if (ch == 'n' && inAfterCR) inAfterCR = false;
+					else if (ch == 'r') {
+						sb.append('\r');
+						inAfterCR = true;
+					} else {
+						throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
+					}
+					getChar();
+				}else if (ch >= 0 && ch <= 127) {
 					sb.append((char)ch);
 					getChar();
 				} else if (ch == -1){
@@ -229,15 +254,19 @@ public class Scanner {
 			}break;
 			case IN_IDENT: {
 			      if (Character.isJavaIdentifierPart(ch)) {
-			            sb.append((char)ch);
-			            Kind temp = isKeyWords(sb);
-			            if (temp != null) {
-			            	t = new Token(temp, sb.toString(), pos, line);
-			            }
-			            getChar();
+			            sb.append((char)ch);			            
+			            temp = isKeyWords(sb);
+				        getChar();
+			            
 			      } else {
 			    	  state = State.START;
-			    	  t = new Token(NAME,sb.toString(), pos, line);
+			    	  if (temp != null) {
+			    		  t = new Token(temp, sb.toString(), pos, line);
+			    		  temp = null;
+			    	  } else {
+			    		  t = new Token(NAME,sb.toString(), pos, line);
+			    	  }
+			    	  
 			      }
 			                 //we are done building the ident.  Create Token
 			                 //if we had keywords, we would check for that here
@@ -334,7 +363,7 @@ public class Scanner {
 					getChar();
 				} else {
 					state = State.START;
-					t = new Token(ASSIGN, ":", pos, line);
+					t = new Token(COLON, ":", pos, line);
 				}
 			}break;
 			case HAVE_DOT: {
