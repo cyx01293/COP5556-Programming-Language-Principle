@@ -75,16 +75,19 @@ public class ExpressionParser {
 	
 	private Exp andExp() throws Exception{
 		// TODO Auto-generated method stub
+		Exp eb = null;
 		if (isKind(NAME)) {
 			Token type = t;
 			consume();
 			
-			return new ExpName(type);
-		}
-		throw new UnsupportedOperationException("andExp");  //I find this is a more useful placeholder than returning null.
+			eb =  new ExpName(type);
+			//match(NAME);
+		}else throw new UnsupportedOperationException("andExp");  //I find this is a more useful placeholder than returning null.
+		return eb;
 	}
-
-
+	private Exp factor() throws Exception{
+		
+	}
 	private Block block() {
 		return new Block(null);  //this is OK for Assignment 2
 	}
