@@ -160,5 +160,13 @@ class ExpressionParserTest {
 		assertEquals(expected,e);
 		
 	}
+	
+	@Test
+	void testPrefixExp() throws Exception {
+		String input = "xy";
+		Exp e = parseAndShow(input);
+		assertEquals(ExpFalse.class, e.getClass());
+		assertEquals("x", ((ExpName) e).name);
+	}
 
 }
