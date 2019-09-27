@@ -114,12 +114,37 @@ class ExpressionParserTest {
 		show("expected="+expected);
 		assertEquals(expected,e);
 	}
+	@Test
+	void testBinary2() throws Exception {
+		String input = "(-1 + 2) * 9";
+		Exp e = parseAndShow(input);
+		Exp expected = Expressions.makeBinary(Expressions.makeBinary(Expressions.makeExpUnary(OP_MINUS, 1),OP_PLUS,Expressions.makeInt(2)), OP_TIMES, Expressions.makeInt(9));
+		show("expected="+expected);
+		assertEquals(expected,e);
+	}
+	@Test
+	void testBinary4() throws Exception {
+		String input = "((1 + 2) * (9 + (1+ 3)))";
+		Exp e = parseAndShow(input);
+		Exp expected = Expressions.makeBinary(Expressions.makeBinary(1,OP_PLUS,2), OP_TIMES, Expressions.makeBinary(
+				 Expressions.makeInt(9), OP_PLUS, Expressions.makeBinary(1,OP_PLUS,3)));
+		show("expected="+expected);
+		assertEquals(expected,e);
+	}
+	@Test
+	void testBinary3() throws Exception {
+		String input = "1 + 2 / 9";
+		Exp e = parseAndShow(input);
+		Exp expected = Expressions.makeBinary(Expressions.makeInt(1), OP_PLUS, Expressions.makeBinary(2,OP_DIV,9));
+		show("expected="+expected);
+		assertEquals(expected,e);
+	}
 	
 	@Test
 	void testUnary0() throws Exception {
-		String input = "-2";
+		String input = "#2";
 		Exp e = parseAndShow(input);
-		Exp expected = Expressions.makeExpUnary(OP_MINUS, 2);
+		Exp expected = Expressions.makeExpUnary(OP_HASH, 2);
 		show("expected="+expected);
 		assertEquals(expected,e);
 	}
@@ -163,10 +188,53 @@ class ExpressionParserTest {
 	
 	@Test
 	void testPrefixExp() throws Exception {
-		String input = "xy";
+		String input = "(xy)\n";
 		Exp e = parseAndShow(input);
-		assertEquals(ExpFalse.class, e.getClass());
-		assertEquals("x", ((ExpName) e).name);
+		assertEquals(ExpName.class, e.getClass());
+		assertEquals("xy", ((ExpName) e).name);
+	}
+	
+	@Test
+	void testplus() throws Exception {
+		String input = "(";
+		assertThrows(SyntaxException.class, () -> {
+		Exp e = parseAndShow(input);
+		});	
+	}
+	
+	@Test
+	void testfunction() throws Exception {
+		String input = "function()end";
+		show(assertThrows(SyntaxException.class, () -> {
+		Exp e = parseAndShow(input);
+		}));	
+	}
+	
+	@Test
+	void testPrefixerrorExp() throws Exception {
+		String input = "(xy";
+		assertThrows(SyntaxException.class, () -> {
+			Exp e = parseAndShow(input);
+			});	
+
+	}
+	@Test
+	void testRightAssoc2() throws Exception {
+		String input = "\"concat\" .. \"is\"..\"right associative\"..\"ddd\"";
+		Exp e = parseAndShow(input);
+		Exp expected = Expressions.makeBinary(Expressions.makeExpString("concat"),DOTDOT,Expressions.makeBinary(
+				Expressions.makeExpString("is")
+				, DOTDOT
+				, Expressions.makeBinary("right associative",DOTDOT,"ddd")));
+		show("expected=" + expected);
+		assertEquals(expected,e);
+	}
+	@Test
+	void testField0() throws Exception {
+		String input = "{x,y = 5}";
+		show(assertThrows(SyntaxException.class, () -> {
+		Exp e = parseAndShow(input);
+		}));	
 	}
 
 }

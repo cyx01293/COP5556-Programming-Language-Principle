@@ -192,5 +192,16 @@ class ScannerTest {
 		assertEquals(t.text,"elseif");
 
 	}
+	@Test
+	void test8() throws Exception {
+		Reader r = new StringReader("\"bdds\"");
+		Scanner s = new Scanner(r);
+		Token t;
+		
+		show(t= s.getNext());  
+		assertEquals(t.kind,STRINGLIT);
+		assertEquals(t.text,"bdds");
+
+	}
 
 }

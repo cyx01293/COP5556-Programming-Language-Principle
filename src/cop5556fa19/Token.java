@@ -145,7 +145,7 @@ public class Token {
 	}
 	
 	/*precondition:  kind is STRINGLIT */
-	String getStringVal() {
+	public String getStringVal() {
 		return text.substring(1,text.length()-1);  //remove delimiters
 	}
 	
