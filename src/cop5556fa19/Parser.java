@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import cop5556fa19.AST.Block;
+import cop5556fa19.AST.Chunk;
 import cop5556fa19.AST.Exp;
 import cop5556fa19.AST.ExpBinary;
 import cop5556fa19.AST.ExpFalse;
@@ -40,7 +41,7 @@ import cop5556fa19.AST.ParList;
 import cop5556fa19.Token.Kind;
 import static cop5556fa19.Token.Kind.*;
 
-public class ExpressionParser {
+public class Parser {
 
 	@SuppressWarnings("serial")
 	class SyntaxException extends Exception {
@@ -54,11 +55,18 @@ public class ExpressionParser {
 	final Scanner scanner;
 	Token t; // invariant: this is the next token
 
-	ExpressionParser(Scanner s) throws Exception {
+	Parser(Scanner s) throws Exception {
 		this.scanner = s;
 		t = scanner.getNext(); // establish invariant
 	}
-
+	Chunk parse() throws Exception {
+		Token first = t;
+		Block b = block();
+		return new Chunk(first, b);
+	}
+	private Block block() {
+		return new Block(null, null); // this is OK for Assignment 2
+	}
 	Exp exp() throws Exception {
 		Token first = t;
 		Exp e0 = andExp();
@@ -90,31 +98,6 @@ public class ExpressionParser {
 			return false;
 	}
 
-	/*
-	 * private Exp aaandExp() throws Exception{ // TODO Auto-generated method stub
-	 * Exp e0 = null; Exp e1 = null; Token first = t; while(isUnop()) { Kind kind =
-	 * t.kind; match(OP_MINUS, KW_not, OP_HASH, BIT_XOR); e0 = part();
-	 * 
-	 * return e0 = new ExpUnary(first, kind, e0); } //e0 = level1(); e0 = part();
-	 * while(isBinop()) { Token op = t;
-	 * 
-	 * match(OP_PLUS, OP_MINUS, OP_TIMES, OP_DIV, OP_DIVDIV, OP_POW, OP_MOD,
-	 * BIT_AMP, BIT_XOR, BIT_OR, BIT_SHIFTR, BIT_SHIFTL, DOTDOT, REL_LT, REL_LE,
-	 * REL_GT, REL_GE, REL_EQEQ, REL_NOTEQ, KW_and, KW_or);
-	 * 
-	 * e1 = part(); e0 = new ExpBinary(first,e0,op,e1);
-	 * 
-	 * }
-	 * 
-	 * 
-	 * while (isRightBinop()) { Token op = t; match(OP_POW, DOTDOT); e1 = andExp();
-	 * consume(); Exp e2 = null; Token op2 = t; match(OP_POW, DOTDOT); e2 = part();
-	 * e1 = new ExpBinary(first,e1,op2,e2); e0 = new ExpBinary(first,e0,op,e1); }
-	 * 
-	 * 
-	 * if (e0 == null) { throw new UnsupportedOperationException("andExp"); //I find
-	 * this is a more useful placeholder than returning null. }else return e0; }
-	 */
 	private Exp andExp() throws Exception {
 		// TODO Auto-generated method stub
 		Exp e0 = null;
@@ -337,9 +320,9 @@ public class ExpressionParser {
 		while (isUnop()) {
 			Token op = t;
 			consume();
-			e1 = level12();
+			e1 = level11();
 			// e0 = new ExpBinary(first, e0, op, e1);
-			e0 = new ExpUnary(op, op.kind, e1);
+			e0 = new ExpUnary(first, op.kind, e1);
 			// return e0 = new ExpUnary(first, kind, e0);
 		}
 		if (e0 == null) {
@@ -419,7 +402,7 @@ public class ExpressionParser {
 			break;
 		case KW_function: {
 			e0 = functiondef();
-			consume();
+			//consume();
 		}
 			break;
 		case LCURLY: {
@@ -435,21 +418,13 @@ public class ExpressionParser {
 		return e0;
 	}
 
-	/*
-	 * private Exp part() throws Exception { Token first = t; Exp e0 = null; switch
-	 * (first.kind) { case NAME: { e0 = prefixexp(); }break; case LPAREN: { e0 =
-	 * prefixexp(); }break; case INTLIT: { e0 = new ExpInt(first); consume();
-	 * }break; case KW_true: { e0 = new ExpTrue(first); consume(); }break; case
-	 * KW_false: { e0 = new ExpFalse(first); consume(); }break; case KW_nil: { e0 =
-	 * new ExpNil(first); consume(); }break; case STRINGLIT: { e0 = new
-	 * ExpString(first); consume(); }break; case DOTDOTDOT: { e0 = new
-	 * ExpVarArgs(first); consume(); }break; case KW_function: { e0 = functiondef();
-	 * consume(); }break; case LCURLY: { e0 = tableconstructor(); }break; default:
-	 * throw new SyntaxException(t, "endExp"); } return e0; }
-	 */
 	private Exp tableconstructor() throws Exception {
 		Token first = t;
 		Exp e0 = null;
+		if (isKind(RCURLY)) {
+			consume();
+			return new ExpTable(first, null);
+		}
 		List<Field> fl = fieldlist();
 		e0 = new ExpTable(first, fl);
 		match(RCURLY);
@@ -507,23 +482,31 @@ public class ExpressionParser {
 			}
 			
 		}
-		if (fd == null) {
-			throw new UnsupportedOperationException("field");
-		} else
+		
+		  if (fd == null) { throw new UnsupportedOperationException("field"); } else
+		 
 			return fd;
 	}
 
+	/*
+	 * private Exp prefixexp() throws Exception { Token first = t; Exp e0 = null; if
+	 * (isKind(LPAREN)) { match(LPAREN); e0 = andExp(); match(RPAREN); } else if
+	 * (isKind(NAME)) { e0 = new ExpName(first); consume(); } if (e0 == null) {
+	 * throw new UnsupportedOperationException("prefixexp"); // I find this is a
+	 * more useful placeholder than // returning null. } else return e0; }
+	 */
+	
 	private Exp prefixexp() throws Exception {
 		Token first = t;
 		Exp e0 = null;
-		if (isKind(NAME)) {
-			e0 = new ExpName(first);
-			consume();
-		} else if (isKind(LPAREN)) {
+		if (isKind(LPAREN)) {
 			match(LPAREN);
 			e0 = andExp();
 			match(RPAREN);
-		}
+		} else if (isKind(NAME)) {
+			e0 = new ExpName(first);
+			consume();
+		} 
 		if (e0 == null) {
 			throw new UnsupportedOperationException("prefixexp"); // I find this is a more useful placeholder than
 																	// returning null.
@@ -605,9 +588,7 @@ public class ExpressionParser {
 
 	
 
-	private Block block() {
-		return new Block(null); // this is OK for Assignment 2
-	}
+	
 
 	protected boolean isKind(Kind kind) {
 		return t.kind == kind;

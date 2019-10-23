@@ -168,12 +168,12 @@ class ScannerTest {
 	}
 	@Test
 	void test6() throws Exception {
-		Reader r = new StringReader("--cc\n");
+		Reader r = new StringReader("abc\n12");
 		Scanner s = new Scanner(r);
 		Token t;
 		show(t= s.getNext());  
-		assertEquals(t.kind,SEMI);
-		assertEquals(t.text,";");
+		assertEquals(t.kind,NAME);
+		assertEquals(t.text,"abc");
 		show(t= s.getNext());  
 		assertEquals(t.kind,COLON);
 		assertEquals(t.text,":");
@@ -194,7 +194,7 @@ class ScannerTest {
 	}
 	@Test
 	void test8() throws Exception {
-		Reader r = new StringReader("\"bdds\"");
+		Reader r = new StringReader("--2");
 		Scanner s = new Scanner(r);
 		Token t;
 		

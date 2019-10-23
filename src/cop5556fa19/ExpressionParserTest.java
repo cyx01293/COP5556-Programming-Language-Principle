@@ -39,7 +39,7 @@ import cop5556fa19.AST.Field;
 import cop5556fa19.AST.FieldExpKey;
 import cop5556fa19.AST.FieldImplicitKey;
 import cop5556fa19.AST.ParList;
-import cop5556fa19.ExpressionParser.SyntaxException;
+import cop5556fa19.Parser.SyntaxException;
 
 class ExpressionParserTest {
 
@@ -59,7 +59,7 @@ class ExpressionParserTest {
 		show("parser input:\n" + input); // Display the input
 		Reader r = new StringReader(input);
 		Scanner scanner = new Scanner(r); // Create a Scanner and initialize it
-		ExpressionParser parser = new ExpressionParser(scanner);  // Create a parser
+		Parser parser = new Parser(scanner);  // Create a parser
 		Exp e = parser.exp(); // Parse and expression
 		show("e=" + e);  //Show the resulting AST
 		return e;
@@ -157,7 +157,23 @@ class ExpressionParserTest {
 		});	
 	}
 	
-
+	@Test
+	void testUnary2() throws Exception {
+		String input = "not #~1";
+		Exp e = parseAndShow(input);
+		Exp expected = Expressions.makeExpUnary(KW_not, Expressions.makeExpUnary(OP_HASH, Expressions.makeExpUnary(BIT_XOR, 1)));
+		show("expected="+expected);
+		assertEquals(expected,e);
+	}
+	
+	@Test
+	void testUnary3() throws Exception {
+		String input = "--2";
+		Exp e = parseAndShow(input);
+		Exp expected = Expressions.makeExpUnary(OP_MINUS, Expressions.makeExpUnary(OP_MINUS, 2));
+		show("expected="+expected);
+		assertEquals(expected,e);
+	}
 	
 	@Test
 	void testRightAssoc() throws Exception {
@@ -204,10 +220,13 @@ class ExpressionParserTest {
 	
 	@Test
 	void testfunction() throws Exception {
-		String input = "function()end";
+		String input = "function (...) end";
+		Exp ed = parseAndShow(input);
 		show(assertThrows(SyntaxException.class, () -> {
 		Exp e = parseAndShow(input);
 		}));	
+		
+		
 	}
 	
 	@Test
@@ -231,7 +250,7 @@ class ExpressionParserTest {
 	}
 	@Test
 	void testField0() throws Exception {
-		String input = "{x,y = 5}";
+		String input = "{}";
 		show(assertThrows(SyntaxException.class, () -> {
 		Exp e = parseAndShow(input);
 		}));	

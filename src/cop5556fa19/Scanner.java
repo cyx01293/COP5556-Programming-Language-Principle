@@ -139,6 +139,7 @@ public class Scanner {
 			    switch (ch) {
 			    case '+': {t = new Token(OP_PLUS, "+", pos, line);getChar();}break;
 			    case '-': {state = State.HAVE_MINUS;getChar();}break;
+			    //case '-': {t = new Token(OP_MINUS, "-", pos, line);getChar();}break;
 			    case '*': {t = new Token(OP_TIMES, "*", pos, line);getChar();}break;
 			    case '/': {state = State.HAVE_DIV;getChar();}break;
 			    case '%': {t = new Token(OP_MOD, "%", pos, line);getChar();}break;
