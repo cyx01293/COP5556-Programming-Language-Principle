@@ -891,37 +891,42 @@ public class Parser {
 			match(DOT);
 			Token temp = t;
 			match(NAME);
-			ExpName exn0 = new ExpName(temp);
+			ExpString exn0 = new ExpString(temp);
 			ExpTableLookup etl = new ExpTableLookup(first, n0, exn0);
 			e1 = prefixexp_tail(etl);
 			return e1;
 		}else if (isKind(LPAREN) || isKind(LCURLY) || isKind(STRINGLIT)) {
-			ExpFunctionCall efc = args(first, n0);
+			ExpFunctionCall efc = args(first, null, n0);
 			e1 = prefixexp_tail(efc);
 			return e1;
 		}else if (isKind(COLON)) {
 			consume();
 			Token temp = t;
 			match(NAME);
-			Name n1 = new Name(first, temp.text);
-			ExpFunctionCall efc = args(first, n0);
+			ExpString exn0 = new ExpString(temp);
+			ExpTableLookup etl = new ExpTableLookup(first, n0, exn0);
+			//Name n1 = new Name(first, temp.text);
+			ExpFunctionCall efc = args(first, etl, n0);
 			e1 = prefixexp_tail(efc);
 			return e1;
-		}else return null;
+		}else return n0;
 	}
 	
-	private ExpFunctionCall args(Token first, Exp n0) throws Exception {
+	private ExpFunctionCall args(Token first, Exp v, Exp n0) throws Exception {
 		Exp e0 = null;
 		Exp e1 = null;
 		List<Exp> el = null;
+		
 		if (isKind(LPAREN)) {
 			match(LPAREN);
 			if (isKind(RPAREN)) {
 				match(RPAREN);
+				if (v != null) el.add(0, v);
 				ExpFunctionCall efc = new ExpFunctionCall(first, n0, el);
 				return efc;
 			} else {
 				el = explist();
+				if (v != null) el.add(0, v);
 				match(RPAREN);
 				ExpFunctionCall efc = new ExpFunctionCall(first, n0, el);
 				return efc;
@@ -931,6 +936,7 @@ public class Parser {
 			match(LCURLY);
 			e0 = tableconstructor();
 			el.add(e0);
+			if (v != null) el.add(0, v);
 			ExpFunctionCall efc = new ExpFunctionCall(first, n0, el);
 			match(RCURLY);
 			return efc;
@@ -938,6 +944,7 @@ public class Parser {
 			e0 = new ExpString(first);
 			consume();
 			el.add(e0);
+			if (v != null) el.add(0, v);
 			ExpFunctionCall efc = new ExpFunctionCall(first, n0, el);
 			return efc;
 		}else {
@@ -978,23 +985,26 @@ public class Parser {
 		ParList pl = null;
 		if (isKind(DOTDOTDOT)) {
 			match(DOTDOTDOT);
+			List<Name> nl = new ArrayList<>();
+			Name n0 = new Name(first, "");
+			nl.add(n0);
 			Token temp = t;
-			pl = new ParList(first, null, true);
-			return pl;
-		}
-		List<Name> nl = null;
-		if (isKind(NAME)) {
-			nl = nameList();
-		} else {
-			return new ParList(first, null, false);
-		}
-		if (isKind(DOTDOTDOT)) {
-			Token temp = t;
-			match(DOTDOTDOT);
 			pl = new ParList(first, nl, true);
-		} else {
-			pl = new ParList(first, nl, false);
+			return pl;
+		}else if (isKind(NAME)){
+			List<Name> nl = null;
+			nl = nameList();
+			if (isKind(DOTDOTDOT)) {
+				Token temp = t;
+				match(DOTDOTDOT);
+				pl = new ParList(first, nl, true);
+			} else {
+				pl = new ParList(first, nl, false);
+			}
+		}else {
+			throw new UnsupportedOperationException("parlist");
 		}
+		
 		if (pl == null) {
 			throw new UnsupportedOperationException("parlist");
 		} else

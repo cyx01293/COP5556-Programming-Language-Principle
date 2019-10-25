@@ -20,6 +20,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import cop5556fa19.AST.Exp;
@@ -38,6 +41,7 @@ import cop5556fa19.AST.Expressions;
 import cop5556fa19.AST.Field;
 import cop5556fa19.AST.FieldExpKey;
 import cop5556fa19.AST.FieldImplicitKey;
+import cop5556fa19.AST.Name;
 import cop5556fa19.AST.ParList;
 import cop5556fa19.Parser.SyntaxException;
 
@@ -220,13 +224,22 @@ class ExpressionParserTest {
 	
 	@Test
 	void testfunction() throws Exception {
-		String input = "function (...) end";
-		Exp ed = parseAndShow(input);
+		String input = "function (a,b, ...) end";
 		show(assertThrows(SyntaxException.class, () -> {
 		Exp e = parseAndShow(input);
 		}));	
-		
-		
+	}
+	
+	@Test
+	void testfunction1() throws Exception {
+		String input = "function (aa, b) end & function(test, l ...) end";
+		Exp e = parseAndShow(input);
+		List<Name> nameList = new ArrayList<>();
+		Exp expected = Expressions.makeBinary(Expressions.makeExpFunction(Expressions.makeFuncBody(Expressions.makeParList(false, "aa", "b"), 
+				Expressions.makeEmptyBlock())), BIT_AMP, Expressions.makeExpFunction(Expressions.makeFuncBody(Expressions.makeParList(true, "test", "l"), 
+						Expressions.makeEmptyBlock())));
+		show("expected=" + expected);
+		assertEquals(expected,e);
 	}
 	
 	@Test
