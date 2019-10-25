@@ -183,7 +183,7 @@ class ScannerTest {
 	}
 	@Test
 	void test7() throws Exception {
-		Reader r = new StringReader("\"adaf\"");
+		Reader r = new StringReader("elseif");
 		Scanner s = new Scanner(r);
 		Token t;
 		
