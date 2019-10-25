@@ -781,7 +781,7 @@ public class Parser {
 		Exp e0 = null;
 		if (isKind(RCURLY)) {
 			consume();
-			return new ExpTable(first, null);
+			return new ExpTable(first, new ArrayList<Field>());
 		}
 		List<Field> fl = fieldlist();
 		e0 = new ExpTable(first, fl);
