@@ -224,7 +224,7 @@ class ExpressionParserTest {
 	
 	@Test
 	void testfunction() throws Exception {
-		String input = "function (a,b, ...) end";
+		String input = "function () end";
 		show(assertThrows(SyntaxException.class, () -> {
 		Exp e = parseAndShow(input);
 		}));	
@@ -232,11 +232,11 @@ class ExpressionParserTest {
 	
 	@Test
 	void testfunction1() throws Exception {
-		String input = "function (aa, b) end & function(test, l ...) end";
+		String input = "function (aa, b) end & function(...) end";
 		Exp e = parseAndShow(input);
 		List<Name> nameList = new ArrayList<>();
 		Exp expected = Expressions.makeBinary(Expressions.makeExpFunction(Expressions.makeFuncBody(Expressions.makeParList(false, "aa", "b"), 
-				Expressions.makeEmptyBlock())), BIT_AMP, Expressions.makeExpFunction(Expressions.makeFuncBody(Expressions.makeParList(true, "test", "l"), 
+				Expressions.makeEmptyBlock())), BIT_AMP, Expressions.makeExpFunction(Expressions.makeFuncBody(Expressions.makeParList(true), 
 						Expressions.makeEmptyBlock())));
 		show("expected=" + expected);
 		assertEquals(expected,e);

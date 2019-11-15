@@ -75,11 +75,11 @@ public class Parser {
 	final Scanner scanner;
 	Token t; // invariant: this is the next token
 
-	Parser(Scanner s) throws Exception {
+	public Parser(Scanner s) throws Exception {
 		this.scanner = s;
 		t = scanner.getNext(); // establish invariant
 	}
-	Chunk parse() throws Exception {
+	public Chunk parse() throws Exception {
 		Token first = t;
 		Block b = block();
 		if (t.kind != EOF)
@@ -922,7 +922,7 @@ public class Parser {
 			if (isKind(RPAREN)) {
 				match(RPAREN);
 				if (v != null) el.add(0, v);
-				ExpFunctionCall efc = new ExpFunctionCall(first, n0, el);
+				ExpFunctionCall efc = new ExpFunctionCall(first, n0, new ArrayList<Exp>());
 				return efc;
 			} else {
 				el = explist();
@@ -953,8 +953,9 @@ public class Parser {
 	}
 
 	private Exp functiondef() throws Exception {
-		Token first = t;
+		
 		match(KW_function);
+		Token first = t;
 		Exp func = null;
 
 		FuncBody body = funcbody();
@@ -986,8 +987,9 @@ public class Parser {
 		if (isKind(DOTDOTDOT)) {
 			match(DOTDOTDOT);
 			List<Name> nl = new ArrayList<>();
-			Name n0 = new Name(first, "");
-			nl.add(n0);
+			/*
+			 * Name n0 = new Name(first, ""); nl.add(n0);
+			 */
 			Token temp = t;
 			pl = new ParList(first, nl, true);
 			return pl;
@@ -1001,6 +1003,8 @@ public class Parser {
 			} else {
 				pl = new ParList(first, nl, false);
 			}
+		}else if (isKind(RPAREN)) {
+			pl = new ParList(first, new ArrayList<Name>(), false);
 		}else {
 			throw new UnsupportedOperationException("parlist");
 		}
