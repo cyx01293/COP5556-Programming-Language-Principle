@@ -167,6 +167,7 @@ public class Parser {
 			}
 			rs = new RetStat(first, exlist);
 		}
+		if (rs != null) list.add(rs);
 		bl = new Block(first, list);
 		return bl; // this is OK for Assignment 2
 	}

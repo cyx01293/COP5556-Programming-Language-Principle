@@ -80,5 +80,7 @@ public interface ASTVisitor {
 	Object visitFieldList(FieldList fieldList, Object arg) throws Exception;
 
 	Object visitExpName(ExpName expName, Object arg) throws Exception;
+	
+	Object visitTableDeref(TableDeref tableDeref, Object arg) throws Exception;
 
 }

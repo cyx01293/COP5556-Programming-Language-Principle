@@ -43,6 +43,7 @@ import cop5556fa19.AST.StatLocalAssign;
 import cop5556fa19.AST.StatLocalFunc;
 import cop5556fa19.AST.StatRepeat;
 import cop5556fa19.AST.StatWhile;
+import cop5556fa19.AST.TableDeref;
 
 public abstract class ASTVisitorAdapter implements ASTVisitor {
 	
@@ -266,6 +267,9 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		throw new UnsupportedOperationException();
 	}
 
-
+	@Override
+	public Object visitTableDeref(TableDeref tableDeref, Object arg) throws Exception {
+		throw new UnsupportedOperationException();
+	}
 
 }

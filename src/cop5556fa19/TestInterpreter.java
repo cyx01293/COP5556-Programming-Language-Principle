@@ -80,11 +80,11 @@ import interpreter.StaticSemanticException;
 		
 		@Test
 		void run1() throws Exception{
-			String input = "return 42";
+			String input = "return 42, 23";
 			show(input);
 			List<LuaValue> ret = interpret(input);
 			show(ret);
-			LuaValue[] vals = {new LuaInt(42)};
+			LuaValue[] vals = {new LuaInt(42), new LuaInt(23)};
 			List<LuaValue> expected = Arrays.asList(vals);
 			assertEquals(expected, ret);
 		}
@@ -371,7 +371,7 @@ import interpreter.StaticSemanticException;
 		
 		@Test
 		void table0() throws Exception {
-			String input = "a = {}";
+			String input = "a = {} return a";
 			show(input);
 			List<LuaValue> ret = interpret(input);
 			show(ret);
@@ -383,7 +383,7 @@ import interpreter.StaticSemanticException;
 		
 		@Test
 		void table1() throws Exception {
-			String input = "a = {\"x\", 2, 3}";
+			String input = "a = {\"x\", 2, 3} return a";
 			show(input);
 			List<LuaValue> ret = interpret(input);
 			show(ret);
