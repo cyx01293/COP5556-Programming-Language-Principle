@@ -67,16 +67,42 @@ public class Interpreter extends ASTVisitorAdapter{
 			}else if (element instanceof RetStat) {
 				//result.add(new LuaInt(42));
 				result = (List<LuaValue>) element.visit(this,arg);
+				if (result != null && result.size() != 0) {
+					return result;
+				}
 				//result.add(retTemp);
 			}else if (element instanceof StatIf) {
 				result = (List<LuaValue>) element.visit(this, arg);
+				if (result != null && result.size() != 0) {
+					return result;
+				}
+			}else if (element instanceof StatRepeat) {
+				result = (List<LuaValue>) element.visit(this, arg);
+				if (result != null && result.size() != 0) {
+					return result;
+				}
+			}else if (element instanceof StatWhile) {
+				result = (List<LuaValue>) element.visit(this, arg);
+				if (result != null && result.size() != 0) {
+					return result;
+				}
+			}else if (element instanceof StatDo) {
+				result = (List<LuaValue>) element.visit(this, arg);
+				if (result != null && result.size() != 0) {
+					return result;
+				}
+			}else if (element instanceof StatBreak) {
+				result = (List<LuaValue>) element.visit(this, arg);
+				if (result != null && result.size() != 0) {
+					return result;
+				}
 			}
 			else {
 				throw new UnsupportedOperationException("visitBlock");
 			}
 			
 		}
-		if (result.size() == 0) result = null;
+		if (result != null && result.size() == 0) result = null;
 		return result;
 	}
 	
@@ -157,7 +183,7 @@ public class Interpreter extends ASTVisitorAdapter{
 				_G.put(varTemp, LuaNil.nil);
 			}
 		}
-		return _G;
+		return new ArrayList<LuaValue>();
 	}
 	
 	public LuaValue check(Exp exp, Object arg) throws Exception {
@@ -177,14 +203,92 @@ public class Interpreter extends ASTVisitorAdapter{
 	}
 	
 	@Override
-	public Object visitStatRepeat(StatRepeat statRepeat, Object arg) throws Exception {
+	public Object visitStatBreak(StatBreak statBreak, Object arg, Object arg2) {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Object visitStatBreak(StatBreak statBreak, Object arg) throws Exception {
+		List<LuaValue> result = new ArrayList<>();
+		result.add(new LuaString("break"));
+		return result;
+	}
+	
+	@Override
+	public Object visitStatDo(StatDo statDo, Object arg) throws Exception {
+		Block b = statDo.b;
+		List<LuaValue> result = (List<LuaValue>) b.visit(this, arg);
+		if (_G.get("loop") == LuaNil.nil) {
+			if (result != null && result.size() > 0 && result.get(0) instanceof LuaString && ((LuaString) result.get(0)).value.equals("break")) {
+				result.remove(result.size() - 1);
+			}
+		}
+		
+		return result;
+	}
+
+	@Override
+	public Object visitStatWhile(StatWhile statWhile, Object arg) throws Exception {
+		Exp e = statWhile.e;
+		Block b = statWhile.b;
+		List<LuaValue> result = new ArrayList<>();
+		if (_G.get("loop") == LuaNil.nil) {
+			_G.put("loop", new LuaInt(1));
+		}else {
+			int i = ((LuaInt) _G.get("loop")).v;
+			_G.put("loop", new LuaInt(i + 1));
+		};
+		while (((LuaBoolean) e.visit(this, arg)).value == true) {
+			result = (List<LuaValue>) b.visit(this, arg);
+			if (result != null && result.size() > 0 && result.get(0) instanceof LuaString && ((LuaString) result.get(0)).value.equals("break")) {
+				if (_G.get("loop") != LuaNil.nil) {
+					int i = ((LuaInt) _G.get("loop")).v;
+					_G.put("loop", new LuaInt(i - 1));
+				}else throw new StaticSemanticException(statWhile.firstToken, "while loop not complete") ;
+				return new ArrayList<LuaValue>();
+			}
+		}
+		if (_G.get("loop") != LuaNil.nil) {
+			int i = ((LuaInt) _G.get("loop")).v;
+			_G.put("loop", new LuaInt(i - 1));
+		}else throw new StaticSemanticException(statWhile.firstToken, "while loop not complete") ;
+		return result;
+	}
+	
+	@Override
+	public Object visitStatRepeat(StatRepeat statRepeat, Object arg) throws Exception {
+		Block b = statRepeat.b;
+		Exp e = statRepeat.e;
+		List<LuaValue> result = new ArrayList<>();
+		if (_G.get("loop") == LuaNil.nil) {
+			_G.put("loop", new LuaInt(1));
+		}else {
+			int i = ((LuaInt) _G.get("loop")).v;
+			_G.put("loop", new LuaInt(i + 1));
+		};
+		do {
+			result = (List<LuaValue>) b.visit(this, arg);
+			if (result != null && result.size() > 0 && result.get(0) instanceof LuaString && ((LuaString) result.get(0)).value.equals("break")) {
+				if (_G.get("loop") != LuaNil.nil) {
+					int i = ((LuaInt) _G.get("loop")).v;
+					_G.put("loop", new LuaInt(i - 1));
+				}else throw new StaticSemanticException(statRepeat.firstToken, "while loop not complete") ;
+				return new ArrayList<LuaValue>();
+			}
+		}
+		while (((LuaBoolean) e.visit(this, arg)).value == false);
+		if (_G.get("loop") != LuaNil.nil) {
+			int i = ((LuaInt) _G.get("loop")).v;
+			_G.put("loop", new LuaInt(i - 1));
+		}else throw new StaticSemanticException(statRepeat.firstToken, "repeat loop not complete") ;
+		return result;
 	}
 	
 	@Override
 	public Object visitStatIf(StatIf statIf, Object arg) throws Exception {
 		List<Exp> es = statIf.es;
 		List<Block> bs = statIf.bs;
+		//List<LuaValue> result = new ArrayList<>();
 		for (int i = 0; i < es.size(); i++) {
 			Exp element = es.get(i);
 			LuaValue temp = (LuaValue)element.visit(this, arg);
@@ -196,16 +300,26 @@ public class Interpreter extends ASTVisitorAdapter{
 			if (((LuaBoolean) temp).value == true) {
 				Block btemp = bs.get(i);
 				List<LuaValue> result = (List<LuaValue>) btemp.visit(this, arg);
+				if (_G.get("loop") == LuaNil.nil) {
+					if (result != null && result.size() > 0 && result.get(0) instanceof LuaString && ((LuaString) result.get(0)).value.equals("break")) {
+						result.remove(result.size() - 1);
+					}
+				}
 				return result;
 			}
 		}
 		if (es.size() < bs.size()) {
 			Block btemp = bs.get(bs.size() - 1);
 			List<LuaValue> result = (List<LuaValue>) btemp.visit(this, arg);
+			if (_G.get("loop") == LuaNil.nil) {
+				if (result != null && result.size() > 0 && result.get(0) instanceof LuaString && ((LuaString) result.get(0)).value.equals("break")) {
+					result.remove(result.size() - 1);
+				}
+			}
 			return result;
 		}
 		
-		return null;
+		return new ArrayList<LuaValue>();
 	}
 	
 	@Override

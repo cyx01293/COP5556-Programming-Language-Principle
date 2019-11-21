@@ -287,6 +287,16 @@ import interpreter.StaticSemanticException;
 		}
 		
 		@Test
+		void repeat0() throws Exception {
+			String input = "i = 5  sum = 0 repeat dummy=print(i) dummy=println(\",\") sum = sum + i   i=i-1 until i <= 0 return sum,i";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			List<LuaValue> expected = makeExpectedWithInts(15,0);
+			assertEquals(expected,ret);
+		}
+		
+		@Test
 		void break0() throws Exception {
 			String input = "x=1 do x=2 do x=3 do break x=4 y0=0 end y1=1 end y2=2 end return x,y0,y1,y2 ";
 			show(input);
