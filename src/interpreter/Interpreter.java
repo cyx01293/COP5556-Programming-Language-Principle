@@ -69,7 +69,7 @@ public class Interpreter extends ASTVisitorAdapter{
 				result = (List<LuaValue>) element.visit(this,arg);
 				//result.add(retTemp);
 			}else if (element instanceof StatIf) {
-				
+				result = (List<LuaValue>) element.visit(this, arg);
 			}
 			else {
 				throw new UnsupportedOperationException("visitBlock");
@@ -101,6 +101,35 @@ public class Interpreter extends ASTVisitorAdapter{
 			//LuaValue expTemp = (LuaValue) expEle.visit(this, _G);
 			LuaValue expTemp = expVisitJudge(expEle, _G);
 			if (expEle instanceof ExpName) expTemp = _G.get(((ExpName) expEle).name);
+			if (expEle instanceof ExpFunctionCall) {
+				List<Exp> fnargs = ((ExpFunctionCall)expEle).args;
+				List<LuaValue> funcInp = new ArrayList<>();
+				List<LuaValue> funcRet = new ArrayList<>();
+				ExpName fn = (ExpName) ((ExpFunctionCall)expEle).f;
+				LuaValue luafn = expVisitJudge(fn, arg);
+				for (int j = 0; j < fnargs.size();j++) {
+					Exp fnargsGet = fnargs.get(j);
+					if (fnargsGet instanceof ExpString) {
+						funcInp.add(expVisitJudge(fnargs.get(j), arg));
+					} else /*
+							 * if (fnargsGet instanceof ExpName) { funcInp.add(_G.get(((ExpName)
+							 * fnargsGet).name)); }else if (fnargsGet instanceof ExpTableLookup) { Exp t =
+							 * ((ExpTableLookup)fnargsGet).table; LuaValue luaT = expVisitJudge(t, arg);
+							 * 
+							 * Exp k = ((ExpTableLookup)fnargsGet).key;
+							 * 
+							 * LuaValue luaK = expVisitJudge(k, arg); if (k instanceof ExpName) { luaK =
+							 * _G.get(((ExpName) k).name); }else { luaK = _G.get(luaK); funcInp.add(luaK); }
+							 * 
+							 * }
+							 */
+					funcInp.add(check(fnargsGet, arg));
+				}
+				JavaFunction jf = (JavaFunction) _G.get(luafn);
+				funcRet = jf.call(funcInp);
+				if (funcRet.size() > 0) expTemp = funcRet.get(0);
+				else expTemp = LuaNil.nil;
+			}
 			if (varEle instanceof ExpName) {
 				_G.put(((ExpName) varEle).name, expTemp);
 				continue;
@@ -111,11 +140,11 @@ public class Interpreter extends ASTVisitorAdapter{
 				LuaValue luaT = expVisitJudge(t, arg);
 				LuaTable tabletemp = (LuaTable)_G.get(luaT);
 				Exp k = ((ExpTableLookup)varEle).key;
-				
-				LuaValue luaK = expVisitJudge(k, arg);
-				if (k instanceof ExpName) {
-					luaK = _G.get(((ExpName) k).name);
-				}
+				LuaValue luaK = check(k, arg);
+				/*
+				 * LuaValue luaK = expVisitJudge(k, arg); if (k instanceof ExpName) { luaK =
+				 * _G.get(((ExpName) k).name); }
+				 */
 				tabletemp.put(luaK, expTemp);
 			}
 			 
@@ -124,11 +153,32 @@ public class Interpreter extends ASTVisitorAdapter{
 		if (m > n) {
 			for (int i = 0; i < m - n; i++) {
 				Exp varEle = varList.get(i);
-				LuaValue varTemp = expVisitJudge(varEle, arg);
+				LuaValue varTemp = check(varEle, arg);
 				_G.put(varTemp, LuaNil.nil);
 			}
 		}
 		return _G;
+	}
+	
+	public LuaValue check(Exp exp, Object arg) throws Exception {
+		if (exp instanceof ExpName) {
+			return _G.get(((ExpName) exp).name);
+		}else if (exp instanceof ExpTableLookup) {
+			Exp t = ((ExpTableLookup)exp).table;
+			
+			//LuaValue luaT = expVisitJudge(t, arg);
+			LuaValue luaT = check(t,arg);
+			Exp k = ((ExpTableLookup)exp).key;
+			LuaValue luaK = check(k, arg);
+			LuaValue luaKret = (luaT instanceof LuaTable)? ((LuaTable) luaT).get(luaK) : luaT;
+			return luaKret;
+			
+		}else return expVisitJudge(exp, arg);
+	}
+	
+	@Override
+	public Object visitStatRepeat(StatRepeat statRepeat, Object arg) throws Exception {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
@@ -137,16 +187,30 @@ public class Interpreter extends ASTVisitorAdapter{
 		List<Block> bs = statIf.bs;
 		for (int i = 0; i < es.size(); i++) {
 			Exp element = es.get(i);
-			LuaBoolean temp = (LuaBoolean)element.visit(this, arg);
-			if (temp.value == true) {
+			LuaValue temp = (LuaValue)element.visit(this, arg);
+			//if (element instanceof ExpName) temp = _G.get(((ExpName) element).name);
+			temp = check(element, arg);
+			if ((temp instanceof LuaBoolean && ((LuaBoolean) temp).value == false) || temp instanceof LuaNil) {
+				temp = new LuaBoolean(false);
+			}else temp = new LuaBoolean(true);
+			if (((LuaBoolean) temp).value == true) {
 				Block btemp = bs.get(i);
 				List<LuaValue> result = (List<LuaValue>) btemp.visit(this, arg);
 				return result;
 			}
 		}
-		Block btemp = bs.get(bs.size() - 1);
-		List<LuaValue> result = (List<LuaValue>) btemp.visit(this, arg);
-		return result;
+		if (es.size() < bs.size()) {
+			Block btemp = bs.get(bs.size() - 1);
+			List<LuaValue> result = (List<LuaValue>) btemp.visit(this, arg);
+			return result;
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public Object visitExpFunctionCall(ExpFunctionCall expFunctionCall, Object arg) throws Exception {
+		throw new UnsupportedOperationException();
 	}
 	
 	public LuaValue expVisitJudge(Exp element, Object arg) throws Exception {
@@ -171,81 +235,154 @@ public class Interpreter extends ASTVisitorAdapter{
  	}
 	
 	@Override
+	public Object visitUnExp(ExpUnary unExp, Object arg) throws Exception {
+		LuaValue input = check(unExp.e, arg);
+		switch(unExp.op) {
+		case KW_not: {
+			if ((input instanceof LuaBoolean && ((LuaBoolean)input).value == false) || input instanceof LuaNil) return new LuaBoolean(true);
+			else return new LuaBoolean(false);
+		}
+		case BIT_XOR: {
+			if (!(input instanceof LuaInt) && !(input instanceof LuaString)) throw new TypeException(unExp.firstToken, "visitUnExpTypeError");
+			int val;
+			if (input instanceof LuaString) val = Integer.valueOf(((LuaString) input).value);
+			else val = ((LuaInt) input).v;
+			return new LuaInt(~val);
+		}
+		case OP_MINUS: {
+			if (!(input instanceof LuaInt) && !(input instanceof LuaString)) throw new TypeException(unExp.firstToken, "visitUnExpTypeError");
+			int val;
+			if (input instanceof LuaString) val = Integer.valueOf(((LuaString) input).value);
+			else val = ((LuaInt) input).v;
+			val = -val;
+			return new LuaInt(val);
+		}
+		case OP_HASH: {
+			if (!(input instanceof LuaString)) throw new TypeException(unExp.firstToken, "visitUnExpTypeError");
+			int val = ((LuaString) input).value.length();
+			return new LuaInt(val);
+		}
+		default: {
+			throw new StaticSemanticException(unExp.firstToken, "visitUnExpTypeError");
+		}
+		}
+	}
+	
+	@Override
 	public Object visitExpBin(ExpBinary expBin, Object arg) throws Exception {
 		LuaValue val0; LuaValue val1; 
-		if (expBin.e0 instanceof ExpName) val0 = _G.get((LuaValue) expBin.e0.visit(this, arg)); 
-		else val0 = (LuaValue) expBin.e0.visit(this, arg); 
-		if (expBin.e1 instanceof ExpName) val1 = _G.get((LuaValue) expBin.e1.visit(this, arg)); 
-		else val1 = (LuaValue) expBin.e1.visit(this, arg);
+		/*
+		 * if (expBin.e0 instanceof ExpName) val0 = _G.get((LuaValue)
+		 * expBin.e0.visit(this, arg)); else val0 = (LuaValue) expBin.e0.visit(this,
+		 * arg);
+		 */
+		val0 = check(expBin.e0, arg);
+		val1 = check(expBin.e1, arg);
 		switch(expBin.op) {
 		case OP_PLUS: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinPlus");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinPlus");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinPlus");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v + ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case OP_MINUS: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinMinus");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinMinus");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinMinus");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v - ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case OP_TIMES: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinTime");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinTimes");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinTimes");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v * ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case OP_DIV: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinDiv");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinDIV");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinDIV");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v / ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case OP_DIVDIV: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinDivDiv");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinDIVDIV");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinDIVDIV");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = Math.floorDiv(((LuaInt)val0).v, ((LuaInt)val1).v);
 			return new LuaInt(val);
 		}
 		case OP_MOD: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinMOD");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinMOD");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinMOD");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v % ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case BIT_SHIFTL: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinSHIFTL");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinSHIFTL");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinSHIFTL");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v << ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case BIT_SHIFTR: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinSHIFTR");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinSHIFTR");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinSHIFTR");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v >> ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case BIT_AMP: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinAMP");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinAMP");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinAMP");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v & ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case BIT_OR: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinOr");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinOR");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinOR");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v | ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case BIT_XOR: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinXOR");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinXOR");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinXOR");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = ((LuaInt)val0).v ^ ((LuaInt)val1).v;
 			return new LuaInt(val);
 		}
 		case OP_POW: {
-			if (!(val0 instanceof LuaInt) || !(val1 instanceof LuaInt)) throw new UnsupportedOperationException("visitExpBinDivDiv");
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinPOW");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new UnsupportedOperationException("visitExpBinPOW");
+			if (val0 instanceof LuaString) val0 = new LuaInt(Integer.valueOf(((LuaString) val0).value));
+			if (val1 instanceof LuaString) val1 = new LuaInt(Integer.valueOf(((LuaString) val1).value));
 			int val = (int) Math.pow(((LuaInt)val0).v, ((LuaInt)val1).v);
 			return new LuaInt(val);
 		}
 		case KW_and: {
-			if (val0 instanceof LuaString || val1 instanceof LuaString) return new LuaBoolean(false);
+			//if (val0 instanceof LuaString || val1 instanceof LuaString) return new LuaBoolean(false);
 			if (val0 instanceof LuaBoolean && ((LuaBoolean)val0).value == false) return val0;
 			if (val0 instanceof LuaNil) return val0;
 			return val1;
 		}
 		case KW_or: {
-			if (val0 instanceof LuaString || val1 instanceof LuaString) return new LuaBoolean(false);
+			//if (val0 instanceof LuaString || val1 instanceof LuaString) return new LuaBoolean(false);
 			if ((!(val0 instanceof LuaBoolean) || !(((LuaBoolean)val0).value == false)) && (!(val0 instanceof LuaNil))) return val0;
 			return val1;
 		}
@@ -294,7 +431,9 @@ public class Interpreter extends ASTVisitorAdapter{
 			}else if (val0 instanceof LuaTable) {
 				throw new UnsupportedOperationException("visitExpBinLTTABLE");
 			}else if (val0 instanceof LuaString) {
-				throw new UnsupportedOperationException("visitExpBinLTSTRING");
+				String s1 = ((LuaString) val0).value;
+				String s2 = ((LuaString) val1).value;
+				return s1.compareTo(s2) < 0? new LuaBoolean(true) : new LuaBoolean(false);
 			}else if (val0 instanceof LuaInt) {
 				if (((LuaInt)val0).v < ((LuaInt)val1).v) return new LuaBoolean(true);
 				else return new LuaBoolean(false);
@@ -307,6 +446,10 @@ public class Interpreter extends ASTVisitorAdapter{
 			if (val0 instanceof LuaInt) {
 				if (((LuaInt)val0).v > ((LuaInt)val1).v) return new LuaBoolean(true);
 				else return new LuaBoolean(false);
+			}else if (val0 instanceof LuaString) {
+				String s1 = ((LuaString) val0).value;
+				String s2 = ((LuaString) val1).value;
+				return s1.compareTo(s2) > 0? new LuaBoolean(true) : new LuaBoolean(false);
 			}else {
 				throw new UnsupportedOperationException("visitExpBinGT");
 			}
@@ -316,6 +459,10 @@ public class Interpreter extends ASTVisitorAdapter{
 			if (val0 instanceof LuaInt) {
 				if (((LuaInt)val0).v <= ((LuaInt)val1).v) return new LuaBoolean(true);
 				else return new LuaBoolean(false);
+			}else if (val0 instanceof LuaString) {
+				String s1 = ((LuaString) val0).value;
+				String s2 = ((LuaString) val1).value;
+				return s1.compareTo(s2) <= 0? new LuaBoolean(true) : new LuaBoolean(false);
 			}else {
 				throw new UnsupportedOperationException("visitExpBinLE");
 			}
@@ -325,6 +472,10 @@ public class Interpreter extends ASTVisitorAdapter{
 			if (val0 instanceof LuaInt) {
 				if (((LuaInt)val0).v >= ((LuaInt)val1).v) return new LuaBoolean(true);
 				else return new LuaBoolean(false);
+			}else if (val0 instanceof LuaString) {
+				String s1 = ((LuaString) val0).value;
+				String s2 = ((LuaString) val1).value;
+				return s1.compareTo(s2) >= 0? new LuaBoolean(true) : new LuaBoolean(false);
 			}else {
 				throw new UnsupportedOperationException("visitExpBinGE");
 			}
@@ -344,37 +495,16 @@ public class Interpreter extends ASTVisitorAdapter{
 		return str;
 	}
 	
-	public int intBin(Kind op, int v0, int v1) {
-		int val = Integer.MIN_VALUE;
-		switch(op) {
-		case OP_PLUS: val = v0 + v1;break;
-		case OP_MINUS: val = v0 - v1;break;
-		case OP_TIMES: val = v0 * v1;break;
-		case OP_DIV: val = v0 / v1;break;
-		case OP_DIVDIV: val = Math.floorDiv(v0, v1);break;
-		case OP_MOD: val = v0 % v1;break;
-		case BIT_SHIFTL: val = v0 << v1;break;
-		case BIT_SHIFTR: val = v0 >> v1;break;
-		case BIT_AMP: val = v0 & v1;break;
-		case BIT_OR: val = v0 | v1;break;
-		case BIT_XOR: val = v0 ^ v1;break;
-		case OP_POW: val = (int) Math.pow(v0, v1);break;
-		case KW_and: val = v1;break;
-		case KW_or: val = v0;break;
-		}
-		return val;
-	}
-	
 	@Override
 	public Object visitExpTableLookup(ExpTableLookup expTableLookup, Object arg) throws Exception {
 		Exp t = expTableLookup.table;
 		LuaValue luaT = expVisitJudge(t, arg);
 		Exp k = expTableLookup.key;
 		
-		LuaValue luaK = expVisitJudge(k, arg);
-		if (k instanceof ExpName) {
-			luaK = _G.get(((ExpName) k).name);
-		}
+		LuaValue luaK = check(k, arg);
+		/*
+		 * if (k instanceof ExpName) { luaK = _G.get(((ExpName) k).name); }
+		 */
 		if (_G.get(luaT) instanceof LuaTable) {
 			LuaTable temp = (LuaTable)_G.get(luaT);
 			return temp.get(luaK);
@@ -392,11 +522,11 @@ public class Interpreter extends ASTVisitorAdapter{
 			if (element instanceof FieldExpKey) {
 				Exp k = ((FieldExpKey) element).key;
 				Exp v = ((FieldExpKey) element).value;
-				LuaValue key = expVisitJudge(k, arg);
+				LuaValue key = check(k, arg);
 				//if (_G.get(key) != LuaNil.nil) key = _G.get(key);
-				if (k instanceof ExpName) key = _G.get(((ExpName) k).name);
-				LuaValue value = expVisitJudge(v, arg);
-				if (v instanceof ExpName) value = _G.get(((ExpName) v).name);
+				//if (k instanceof ExpName) key = _G.get(((ExpName) k).name);
+				LuaValue value = check(v, arg);
+				//if (v instanceof ExpName) value = _G.get(((ExpName) v).name);
 				res.put(key, value);
 			}else if (element instanceof FieldNameKey) {
 				Name n = ((FieldNameKey) element).name;
@@ -405,13 +535,13 @@ public class Interpreter extends ASTVisitorAdapter{
 				 * LuaValue name = new LuaString(n.name); if (_G.get(name) != LuaNil.nil) name =
 				 * _G.get(name);
 				 */
-				LuaValue exp = expVisitJudge(ex, arg);
-				if (ex instanceof ExpName) exp = _G.get(((ExpName) ex).name);
+				LuaValue exp = check(ex, arg);
+				//if (ex instanceof ExpName) exp = _G.get(((ExpName) ex).name);
 				res.put(n.name, exp);
 			}else if (element instanceof FieldImplicitKey) {
 				Exp ex = ((FieldImplicitKey) element).exp;
-				LuaValue exp = expVisitJudge(ex, arg);
-				if (ex instanceof ExpName) exp = _G.get(((ExpName) ex).name);
+				LuaValue exp = check(ex, arg);
+				//if (ex instanceof ExpName) exp = _G.get(((ExpName) ex).name);
 				res.putImplicit(exp);
 			}else {
 				throw new UnsupportedOperationException("visitExpTable");
