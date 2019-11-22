@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-
+import interpreter.StaticSemanticException;
 //import cop5556fa19.BuildSymbolTable;
 import cop5556fa19.Parser;
 import cop5556fa19.Scanner;
@@ -76,7 +76,7 @@ public class StaticAnalysis extends ASTVisitorAdapter{
 					map.put(n.name, r);
 					mapLabel.put(n.name, st);
 				}else {
-					throw new TypeException(element.firstToken, "assignGoto");
+					throw new interpreter.StaticSemanticException(element.firstToken, "assignGoto");
 				}
 				((StatGoto) element).label = mapLabel.get(n.name).get(0);
 			}else if (element instanceof StatIf) {
@@ -124,7 +124,7 @@ public class StaticAnalysis extends ASTVisitorAdapter{
 					List<Integer> temp = map.get(n.name);
 					List<StatLabel> tempLabel = mapLabel.get(n.name);
 					temp.add(0, current_scope);
-					tempLabel.add(0, addS);
+					tempLabel.add(addS);
 					map.put(n.name, temp);
 					mapLabel.put(n.name, tempLabel);
 				}else {
