@@ -5,7 +5,7 @@ import cop5556fa19.Token;
 public class StatLabel extends Stat {
 	
 	public final Name label;
-	Block enclosingBlock;  //block where label appears
+	public Block enclosingBlock;  //block where label appears
 	public int index;             //index of label in statement list
 	
 //	public StatLabel(Token firstToken, Name label) {

@@ -399,7 +399,7 @@ public class Parser {
 		match(NAME);
 		Name n0 = new Name(first, temp.text);
 		match(COLONCOLON);
-		return new StatLabel(first, n0);
+		return new StatLabel(first, n0, null, -1);
 	}
 	
 	Exp exp() throws Exception {

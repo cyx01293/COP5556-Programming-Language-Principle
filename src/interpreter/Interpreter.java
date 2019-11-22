@@ -72,6 +72,14 @@ public class Interpreter extends ASTVisitorAdapter{
 				}
 				//result.add(retTemp);
 			}else if (element instanceof StatIf) {
+				Object target = element.visit(this, arg);
+				if (target instanceof StatLabel) {
+					if (!((StatLabel) target).enclosingBlock.equals(block)) {
+						return target;
+					}else {
+						i = ((StatLabel) target).index;
+					}
+				}
 				result = (List<LuaValue>) element.visit(this, arg);
 				if (result != null && result.size() != 0) {
 					return result;
@@ -96,6 +104,16 @@ public class Interpreter extends ASTVisitorAdapter{
 				if (result != null && result.size() != 0) {
 					return result;
 				}
+			}else if (element instanceof StatLabel) {
+				
+			}else if (element instanceof StatGoto) {
+				StatLabel target = ((StatGoto)element).label;
+				if (!target.enclosingBlock.equals(block)) {
+					return target;
+				}else {
+					i = target.index;
+				}
+				
 			}
 			else {
 				throw new UnsupportedOperationException("visitBlock");
@@ -104,6 +122,17 @@ public class Interpreter extends ASTVisitorAdapter{
 		}
 		if (result != null && result.size() == 0) result = null;
 		return result;
+	}
+	
+	@Override
+	public Object visitStatGoto(StatGoto statGoto, Object arg) throws Exception {
+		StatLabel target = statGoto.label;
+		return target;
+	}
+	
+	@Override
+	public Object visitLabel(StatLabel statLabel, Object ar) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
@@ -729,8 +758,8 @@ public class Interpreter extends ASTVisitorAdapter{
 		Chunk chunk = parser.parse();
 		root = chunk;
 		//Perform static analysis to prepare for goto.  Uncomment after u
-//		StaticAnalysis hg = new StaticAnalysis();
-//		chunk.visit(hg,null);	
+		StaticAnalysis hg = new StaticAnalysis();
+		chunk.visit(hg,null);	
 		//Interpret the program and return values returned from chunk.visit
 		List<LuaValue> vals = (List<LuaValue>) chunk.visit(this,_G);
 		return vals;
