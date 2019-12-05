@@ -111,127 +111,91 @@ class ParserTest_Sample {
 		assertEquals(expected,n);
 	}
 	
-	@Test
-	void testAssign1() throws Exception {
-		String input = "a=b";
-		Block b = parseBlockAndShow(input);		
-		List<Exp> lhs = Expressions.makeExpList(Expressions.makeExpName("a"));
-		List<Exp> rhs = Expressions.makeExpList(Expressions.makeExpName("b"));
-		StatAssign s = Expressions.makeStatAssign(lhs,rhs);
-		Block expected = Expressions.makeBlock(s);
-		assertEquals(expected,b);
-	}
-	
-	@Test
-	void testAssignChunk1() throws Exception {
-		String input = "a=b";
-		ASTNode c = parseAndShow(input);		
-		List<Exp> lhs = Expressions.makeExpList(Expressions.makeExpName("a"));
-		List<Exp> rhs = Expressions.makeExpList(Expressions.makeExpName("b"));
-		StatAssign s = Expressions.makeStatAssign(lhs,rhs);
-		Block b = Expressions.makeBlock(s);
-		Chunk expected = new Chunk(b.firstToken,b);
-		assertEquals(expected,c);
-	}
-	
-
-	@Test
-	void testMultiAssign1() throws Exception {
-		String input = "a,c=8,9";
-		Block b = parseBlockAndShow(input);		
-		List<Exp> lhs = Expressions.makeExpList(
-					Expressions.makeExpName("a")
-					,Expressions.makeExpName("c"));
-		Exp e1 = Expressions.makeExpInt(8);
-		Exp e2 = Expressions.makeExpInt(9);
-		List<Exp> rhs = Expressions.makeExpList(e1,e2);
-		StatAssign s = Expressions.makeStatAssign(lhs,rhs);
-		Block expected = Expressions.makeBlock(s);
-		assertEquals(expected,b);		
-	}
-	
-
-	
-
-	@Test
-	void testMultiAssign3() throws Exception {
-		String input = "a,c=8,f(x)";
-		Block b = parseBlockAndShow(input);		
-		List<Exp> lhs = Expressions.makeExpList(
-					Expressions.makeExpName("a")
-					,Expressions.makeExpName("c"));
-		Exp e1 = Expressions.makeExpInt(8);
-		List<Exp> args = new ArrayList<>();
-		args.add(Expressions.makeExpName("x"));
-		Exp e2 = Expressions.makeExpFunCall(Expressions.makeExpName("f"),args, null);
-		List<Exp> rhs = Expressions.makeExpList(e1,e2);
-		StatAssign s = Expressions.makeStatAssign(lhs,rhs);
-		Block expected = Expressions.makeBlock(s);
-		assertEquals(expected,b);			
-	}
-	
-
-	
-	@Test
-	void testAssignToTable() throws Exception {
-		String input = "g.a.b = 3";
-		Block bl = parseBlockAndShow(input);
-		ExpName g = Expressions.makeExpName("g");
-		ExpString a = Expressions.makeExpString("a");
-		Exp gtable = Expressions.makeExpTableLookup(g,a);
-		ExpString b = Expressions.makeExpString("b");
-		Exp v = Expressions.makeExpTableLookup(gtable, b);
-		Exp three = Expressions.makeExpInt(3);		
-		Stat s = Expressions.makeStatAssign(Expressions.makeExpList(v), Expressions.makeExpList(three));;
-		Block expected = Expressions.makeBlock(s);
-		assertEquals(expected,bl);
-	}
-	
-	@Test
-	void testAssignTableToVar() throws Exception {
-		String input = "x = g.a.b";
-		Block bl = parseBlockAndShow(input);
-		ExpName g = Expressions.makeExpName("g");
-		ExpString a = Expressions.makeExpString("a");
-		Exp gtable = Expressions.makeExpTableLookup(g,a);
-		ExpString b = Expressions.makeExpString("b");
-		Exp e = Expressions.makeExpTableLookup(gtable, b);
-		Exp v = Expressions.makeExpName("x");		
-		Stat s = Expressions.makeStatAssign(Expressions.makeExpList(v), Expressions.makeExpList(e));;
-		Block expected = Expressions.makeBlock(s);
-		assertEquals(expected,bl);
-	}
-	
-
-	
-	@Test
-	void testmultistatements6() throws Exception {
-		String input = "x = g.a.b ; ::mylabel:: do  y = 2 goto mylabel f=a(0,200) end break"; //same as testmultistatements0 except ;
-		ASTNode c = parseAndShow(input);
-		ExpName g = Expressions.makeExpName("g");
-		ExpString a = Expressions.makeExpString("a");
-		Exp gtable = Expressions.makeExpTableLookup(g,a);
-		ExpString b = Expressions.makeExpString("b");
-		Exp e = Expressions.makeExpTableLookup(gtable, b);
-		Exp v = Expressions.makeExpName("x");		
-		Stat s0 = Expressions.makeStatAssign(v,e);
-		StatLabel s1 = Expressions.makeStatLabel("mylabel");
-		Exp y = Expressions.makeExpName("y");
-		Exp two = Expressions.makeExpInt(2);
-		Stat s2 = Expressions.makeStatAssign(y,two);
-		Stat s3 = Expressions.makeStatGoto("mylabel");
-		Exp f = Expressions.makeExpName("f");
-		Exp ae = Expressions.makeExpName("a");
-		Exp zero = Expressions.makeExpInt(0);
-		Exp twohundred = Expressions.makeExpInt(200);
-		List<Exp> args = Expressions.makeExpList(zero, twohundred);
-		ExpFunctionCall fc = Expressions.makeExpFunCall(ae, args, null);		
-		StatAssign s4 = Expressions.makeStatAssign(f,fc);
-		StatDo statdo = Expressions.makeStatDo(s2,s3,s4);
-		StatBreak statBreak = Expressions.makeStatBreak();
-		Block expectedBlock = Expressions.makeBlock(s0,s1,statdo,statBreak);
-		Chunk expectedChunk = new Chunk(expectedBlock.firstToken, expectedBlock);
-		assertEquals(expectedChunk,c);
-	}
+	/*
+	 * @Test void testAssign1() throws Exception { String input = "a=b"; Block b =
+	 * parseBlockAndShow(input); List<Exp> lhs =
+	 * Expressions.makeExpList(Expressions.makeExpName("a")); List<Exp> rhs =
+	 * Expressions.makeExpList(Expressions.makeExpName("b")); StatAssign s =
+	 * Expressions.makeStatAssign(lhs,rhs); Block expected =
+	 * Expressions.makeBlock(s); assertEquals(expected,b); }
+	 * 
+	 * @Test void testAssignChunk1() throws Exception { String input = "a=b";
+	 * ASTNode c = parseAndShow(input); List<Exp> lhs =
+	 * Expressions.makeExpList(Expressions.makeExpName("a")); List<Exp> rhs =
+	 * Expressions.makeExpList(Expressions.makeExpName("b")); StatAssign s =
+	 * Expressions.makeStatAssign(lhs,rhs); Block b = Expressions.makeBlock(s);
+	 * Chunk expected = new Chunk(b.firstToken,b); assertEquals(expected,c); }
+	 * 
+	 * 
+	 * @Test void testMultiAssign1() throws Exception { String input = "a,c=8,9";
+	 * Block b = parseBlockAndShow(input); List<Exp> lhs = Expressions.makeExpList(
+	 * Expressions.makeExpName("a") ,Expressions.makeExpName("c")); Exp e1 =
+	 * Expressions.makeExpInt(8); Exp e2 = Expressions.makeExpInt(9); List<Exp> rhs
+	 * = Expressions.makeExpList(e1,e2); StatAssign s =
+	 * Expressions.makeStatAssign(lhs,rhs); Block expected =
+	 * Expressions.makeBlock(s); assertEquals(expected,b); }
+	 * 
+	 * 
+	 * 
+	 * 
+	 * @Test void testMultiAssign3() throws Exception { String input = "a,c=8,f(x)";
+	 * Block b = parseBlockAndShow(input); List<Exp> lhs = Expressions.makeExpList(
+	 * Expressions.makeExpName("a") ,Expressions.makeExpName("c")); Exp e1 =
+	 * Expressions.makeExpInt(8); List<Exp> args = new ArrayList<>();
+	 * args.add(Expressions.makeExpName("x")); Exp e2 =
+	 * Expressions.makeExpFunCall(Expressions.makeExpName("f"),args, null);
+	 * List<Exp> rhs = Expressions.makeExpList(e1,e2); StatAssign s =
+	 * Expressions.makeStatAssign(lhs,rhs); Block expected =
+	 * Expressions.makeBlock(s); assertEquals(expected,b); }
+	 * 
+	 * 
+	 * 
+	 * @Test void testAssignToTable() throws Exception { String input = "g.a.b = 3";
+	 * Block bl = parseBlockAndShow(input); ExpName g =
+	 * Expressions.makeExpName("g"); ExpString a = Expressions.makeExpString("a");
+	 * Exp gtable = Expressions.makeExpTableLookup(g,a); ExpString b =
+	 * Expressions.makeExpString("b"); Exp v =
+	 * Expressions.makeExpTableLookup(gtable, b); Exp three =
+	 * Expressions.makeExpInt(3); Stat s =
+	 * Expressions.makeStatAssign(Expressions.makeExpList(v),
+	 * Expressions.makeExpList(three));; Block expected = Expressions.makeBlock(s);
+	 * assertEquals(expected,bl); }
+	 * 
+	 * @Test void testAssignTableToVar() throws Exception { String input =
+	 * "x = g.a.b"; Block bl = parseBlockAndShow(input); ExpName g =
+	 * Expressions.makeExpName("g"); ExpString a = Expressions.makeExpString("a");
+	 * Exp gtable = Expressions.makeExpTableLookup(g,a); ExpString b =
+	 * Expressions.makeExpString("b"); Exp e =
+	 * Expressions.makeExpTableLookup(gtable, b); Exp v =
+	 * Expressions.makeExpName("x"); Stat s =
+	 * Expressions.makeStatAssign(Expressions.makeExpList(v),
+	 * Expressions.makeExpList(e));; Block expected = Expressions.makeBlock(s);
+	 * assertEquals(expected,bl); }
+	 * 
+	 * 
+	 * 
+	 * @Test void testmultistatements6() throws Exception { String input =
+	 * "x = g.a.b ; ::mylabel:: do  y = 2 goto mylabel f=a(0,200) end break"; //same
+	 * as testmultistatements0 except ; ASTNode c = parseAndShow(input); ExpName g =
+	 * Expressions.makeExpName("g"); ExpString a = Expressions.makeExpString("a");
+	 * Exp gtable = Expressions.makeExpTableLookup(g,a); ExpString b =
+	 * Expressions.makeExpString("b"); Exp e =
+	 * Expressions.makeExpTableLookup(gtable, b); Exp v =
+	 * Expressions.makeExpName("x"); Stat s0 = Expressions.makeStatAssign(v,e);
+	 * StatLabel s1 = Expressions.makeStatLabel("mylabel"); Exp y =
+	 * Expressions.makeExpName("y"); Exp two = Expressions.makeExpInt(2); Stat s2 =
+	 * Expressions.makeStatAssign(y,two); Stat s3 =
+	 * Expressions.makeStatGoto("mylabel"); Exp f = Expressions.makeExpName("f");
+	 * Exp ae = Expressions.makeExpName("a"); Exp zero = Expressions.makeExpInt(0);
+	 * Exp twohundred = Expressions.makeExpInt(200); List<Exp> args =
+	 * Expressions.makeExpList(zero, twohundred); ExpFunctionCall fc =
+	 * Expressions.makeExpFunCall(ae, args, null); StatAssign s4 =
+	 * Expressions.makeStatAssign(f,fc); StatDo statdo =
+	 * Expressions.makeStatDo(s2,s3,s4); StatBreak statBreak =
+	 * Expressions.makeStatBreak(); Block expectedBlock =
+	 * Expressions.makeBlock(s0,s1,statdo,statBreak); Chunk expectedChunk = new
+	 * Chunk(expectedBlock.firstToken, expectedBlock);
+	 * assertEquals(expectedChunk,c); }
+	 */
 }
 

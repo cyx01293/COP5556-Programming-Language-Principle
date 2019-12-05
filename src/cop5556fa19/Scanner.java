@@ -293,9 +293,9 @@ public class Scanner {
 				} else if (isLineTerminator()) {
 					state = State.START;
 					getChar();
-				} else if (ch == -1) {
-					t = new Token(EOF, "EOF", pos, line);
-				} else {
+				} else /*
+						 * if (ch == -1) { t = new Token(EOF, "EOF", pos, line); } else
+						 */ {
 					throw new LexicalException("illegal character " +(char)ch+" at position "+(pos + 1) + ", line "+(line + 1));
 				}
 			}break;

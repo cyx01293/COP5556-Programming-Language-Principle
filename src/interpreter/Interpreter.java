@@ -396,6 +396,8 @@ public class Interpreter extends ASTVisitorAdapter{
 			return (LuaTable) element.visit(this, arg);
 		}else if (element instanceof ExpBinary) {
 			return (LuaValue) element.visit(this, arg);
+		}else if (element instanceof ExpUnary) {
+			return (LuaValue) element.visit(this, arg);
 		}
 		else return LuaNil.nil;
  	}
@@ -551,6 +553,19 @@ public class Interpreter extends ASTVisitorAdapter{
 			//if (val0 instanceof LuaString || val1 instanceof LuaString) return new LuaBoolean(false);
 			if ((!(val0 instanceof LuaBoolean) || !(((LuaBoolean)val0).value == false)) && (!(val0 instanceof LuaNil))) return val0;
 			return val1;
+		}
+		case DOTDOT: {
+			if (!(val0 instanceof LuaInt) && !(val0 instanceof LuaString)) throw new TypeException("visitExpBinDOTDOT");
+			if (!(val1 instanceof LuaInt) && !(val1 instanceof LuaString)) throw new TypeException("visitExpBinDOTDOT");
+			String s0 = "";
+			String s1 = "";
+			if (val0 instanceof LuaInt) {
+				s0 = String.valueOf(((LuaInt)val0).v);
+			}else s0 = ((LuaString)val0).value;
+			if (val1 instanceof LuaInt) {
+				s1 = String.valueOf(((LuaInt)val1).v);
+			}else s1 = ((LuaString)val1).value;
+			return new LuaString(s0.trim()+" "+s1.trim());
 		}
 		case REL_EQEQ: {
 			if (val0.getClass() != val1.getClass()) return new LuaBoolean(false);

@@ -194,13 +194,13 @@ class ScannerTest {
 	}
 	@Test
 	void test8() throws Exception {
-		Reader r = new StringReader("--2");
+		Reader r = new StringReader("\" \\ \"");
 		Scanner s = new Scanner(r);
 		Token t;
 		
 		show(t= s.getNext());  
-		assertEquals(t.kind,STRINGLIT);
-		assertEquals(t.text,"bdds");
+		assertEquals(t.kind,SEMI);
+		assertEquals(t.text,";");
 
 	}
 

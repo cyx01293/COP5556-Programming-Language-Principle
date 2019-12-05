@@ -555,5 +555,38 @@ import interpreter.StaticSemanticException;
 			List<LuaValue> expected = Arrays.asList(vals);
 			assertEquals(expected, ret);
 		}
+		
+		@Test
+		void returnTest() throws Exception{
+			String input = "return \"123 \" .. \" 456\"";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			LuaValue[] vals = {new LuaString("123 456")};
+			List<LuaValue> expected = Arrays.asList(vals);
+			assertEquals(expected, ret);
+		}
+		
+		@Test
+		void returnTest2() throws Exception{
+			String input = "return (100+20+3) .. \" one two three\"";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			LuaValue[] vals = {new LuaString("123 one two three")};
+			List<LuaValue> expected = Arrays.asList(vals);
+			assertEquals(expected, ret);
+		}
+		
+		@Test
+		void mathOperation6() throws Exception{
+			String input = "return (3 * 4) / (2 % 3)//(-5)";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			LuaValue[] vals = {new LuaInt(-2)};
+			List<LuaValue> expected = Arrays.asList(vals);
+			assertEquals(expected, ret);
+		}
 
 }
